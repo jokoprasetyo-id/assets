@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liquid Assets Tracker</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f172a; --card-bg: rgba(255, 255, 255, 0.03); --card-border: rgba(255, 255, 255, 0.08);
+    --card-highlight: rgba(255, 255, 255, 0.15); --txt-main: #f8fafc; --txt-dim: #94a3b8;
+    --accent: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.5); --success: #34d399;
+    --input-bg: rgba(0, 0, 0, 0.2); --item-bg: rgba(255, 255, 255, 0.02); --track-bg: rgba(0, 0, 0, 0.3);
+    --danger-bg: rgba(239, 68, 68, 0.1); --danger-border: rgba(239, 68, 68, 0.2); --danger-txt: #ef4444;
+    --blob-opacity: 0.5;
+  }
+  body.light {
+    --bg: #f1f5f9; --card-bg: rgba(255, 255, 255, 0.6); --card-border: rgba(255, 255, 255, 1);
+    --card-highlight: rgba(255, 255, 255, 0.9); --txt-main: #0f172a; --txt-dim: #64748b;
+    --accent: #0284c7; --accent-glow: rgba(2, 132, 199, 0.3); --success: #059669;
+    --input-bg: rgba(255, 255, 255, 0.7); --item-bg: rgba(255, 255, 255, 0.5); --track-bg: rgba(0, 0, 0, 0.08);
+    --danger-bg: rgba(239, 68, 68, 0.15); --danger-border: rgba(239, 68, 68, 0.3); --danger-txt: #dc2626;
+    --blob-opacity: 0.8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Outfit', sans-serif; background-color: var(--bg); color: var(--txt-main);
+    min-height: 100vh; overflow-x: hidden; position: relative; padding: 2rem 1rem 6rem;
+    display: flex; justify-content: center; transition: background-color 0.4s ease, color 0.4s ease;
+  }
+  .blob {
+    position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: var(--blob-opacity);
+    animation: float 15s infinite alternate ease-in-out; transition: opacity 0.4s ease;
+  }
+  .blob-1 { background: #3b82f6; width: 40vw; height: 40vw; top: -10%; left: -10%; }
+  .blob-2 { background: #8b5cf6; width: 35vw; height: 35vw; bottom: -10%; right: -5%; animation-delay: -5s; }
+  .blob-3 { background: #0ea5e9; width: 30vw; height: 30vw; top: 40%; left: 30%; animation-delay: -10s; mix-blend-mode: screen; }
+  @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 30px) scale(1.1); } }
+  .app-container { width: 100%; max-width: 600px; z-index: 1; }
+  .top-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1.2; }
+  .filter-group { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .month-picker { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-main); padding: 6px 12px; border-radius: 8px; font-family: 'Space Grotesk'; font-size: 14px; font-weight: 600; outline: none; cursor: pointer; transition: 0.3s; }
+  .last-updated { font-size: 11px; color: var(--txt-dim); }
+  .top-actions { display: flex; gap: 8px; }
+  .btn-icon { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-main); width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s; }
+  .glass-card { background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--card-border); border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+  .hero-card { text-align: center; padding: 32px 24px; }
+  .hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 8px; }
+  .hero-val { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; letter-spacing: -1px; }
+  #settings-panel { display: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); animation: slideDown 0.3s ease; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+  .link-cek { color: var(--accent); text-decoration: none; font-size: 10px; font-weight: 700; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 100px; margin-left: 6px; display: inline-flex; align-items: center; gap: 2px; }
+  .goal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+  .goal-title-input { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--txt-main); font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; width: 100%; outline: none; transition: 0.3s; padding-bottom: 4px; }
+  .btn-collapse { background: transparent; border: none; color: var(--txt-dim); width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease; }
+  .progress-wrapper { position: relative; margin-top: 10px; margin-bottom: 24px;}
+  .progress-glass { height: 12px; background: var(--track-bg); border-radius: 100px; border: 1px solid var(--card-border); overflow: hidden; position: relative; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #38bdf8); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--accent-glow); position: relative; overflow: hidden; }
+  .mini-summary { display: none; margin-top: 8px; }
+  .is-collapsed .mini-summary { display: block; }
+  .mini-stat { font-size: 12px; font-weight: 600; color: var(--success); font-family: 'Space Grotesk', sans-serif; margin-bottom: 6px; }
+  .progress-mini { height: 4px; background: var(--track-bg); border-radius: 4px; overflow: hidden; }
+  .card-body { transition: max-height 0.4s ease, opacity 0.4s ease; overflow: hidden; margin-top: 16px; }
+  .is-collapsed .card-body { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
+  .is-collapsed .btn-collapse { transform: rotate(-180deg); }
+  .is-collapsed { padding-bottom: 20px; }
+  .progress-stats { display: flex; justify-content: space-between; margin-top: 10px; font-family: 'Space Grotesk', sans-serif; }
+  .stat-val { font-size: 16px; font-weight: 700; color: var(--txt-main); }
+  .stat-val.success { color: var(--success); }
+  .stat-label { font-size: 10px; color: var(--txt-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; align-items: end; }
+  .input-label { display: block; font-size: 12px; color: var(--txt-dim); margin-bottom: 8px; font-weight: 500; }
+  .input-glass { width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 16px; color: var(--txt-main); font-family: inherit; font-size: 15px; outline: none; transition: all 0.3s; }
+  .asset-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .asset-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--item-bg); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 8px; transition: background 0.3s; }
+  .asset-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; color: var(--accent); flex-shrink: 0; }
+  .asset-info { flex: 1; min-width: 0; }
+  .asset-name { font-size: 14px; font-weight: 600; background: transparent; border: none; color: var(--txt-main); width: 100%; outline: none; margin-bottom: 2px; }
+  .asset-val-group { display: flex; flex-direction: column; align-items: flex-end; }
+  .val-input-row { display: flex; align-items: center; gap: 4px; }
+  .asset-amount { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--success); background: transparent; border: none; outline: none; text-align: right; width: 85px; }
+  .asset-unit { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-dim); font-size: 11px; font-family: inherit; border-radius: 6px; padding: 4px; outline: none; cursor: pointer; max-width: 105px; }
+  .asset-unit option { background: var(--bg); color: var(--txt-main); }
+  .asset-equiv { font-size: 10.5px; color: var(--txt-dim); margin-top: 4px; font-family: 'Space Grotesk', sans-serif; }
+  .btn-del { background: var(--danger-bg); color: var(--danger-txt); border: 1px solid var(--danger-border); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .btn-del-goal { width: 32px; height: 32px; background: transparent; border-color: transparent; color: var(--txt-dim); }
+  .btn-add-asset { width: 100%; padding: 12px; border-radius: 12px; margin-top: 4px; background: transparent; border: 1px dashed var(--card-border); color: var(--txt-dim); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.3s; }
+  .btn-add-goal { width: 100%; padding: 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .pct-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--accent); padding: 6px 12px; border-radius: 100px; font-size: 13px; font-weight: 600; font-family: 'Space Grotesk'; white-space: nowrap; }
+  .chart-section { display: flex; align-items: center; gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border); }
+  .donut-chart { width: 70px; height: 70px; border-radius: 50%; background: var(--track-bg); position: relative; flex-shrink: 0; transition: background 0.4s; }
+  .donut-chart::before { content: ''; position: absolute; inset: 12px; background: var(--card-bg); border-radius: 50%; }
+  .chart-legend { flex: 1; font-size: 11.5px; color: var(--txt-dim); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .debt-input-container:focus-within { border-bottom: 1px solid var(--danger-txt); }
+</style>
+</head>
+<body class="light">
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="app-container">
+  <div class="top-bar">
+    <header>
+      <h1>Liquid Assets</h1>
+      <div class="filter-group">
+        <input type="month" id="month-filter" class="month-picker">
+        <div class="last-updated" id="last-updated-lbl">Updated: -</div>
+      </div>
+    </header>
+    <div class="top-actions">
+      <button class="btn-icon" id="btn-settings" title="Pengaturan Harga">
+        <i data-lucide="settings"></i>
+      </button>
+      <button class="btn-icon" id="btn-theme" title="Ganti Tema">
+        <i data-lucide="moon" id="theme-icon"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="glass-card">
+    <div class="goal-header" style="margin-bottom: 20px;">
+      <div style="font-size: 16px; font-weight: 700; color: var(--txt-main); display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i> Pengaturan
+      </div>
+      <button class="btn-collapse" id="close-settings"><i data-lucide="x"></i></button>
+    </div>
+
+    <!-- Akun & Cloud Sync Section -->
+    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border);">
+      <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="cloud-upload" style="width: 14px; height: 14px;"></i> Cloud Sync
+      </div>
+      <div id="user-logged-out">
+        <button id="btn-login" style="width: 100%; padding: 12px; border-radius: 12px; background: var(--accent); color: white; border: none; font-size: 14px; font-family: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s;">
+          <i data-lucide="log-in" style="width: 16px; height: 16px;"></i> Masuk dengan Google
+        </button>
+        <div style="font-size: 11px; text-align: center; color: var(--txt-dim); margin-top: 8px;">Simpan dan sinkronkan datamu secara realtime.</div>
+      </div>
+      <div id="user-logged-in" style="display: none; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--card-border);">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img id="up-avatar" src="" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--card-border);">
+          <div>
+            <div id="up-name" style="font-size: 14px; font-weight: 600; color: var(--txt-main);"></div>
+            <div id="up-email" style="font-size: 11px; color: var(--txt-dim);"></div>
+          </div>
+        </div>
+        <button id="up-logout" style="background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-txt); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: 0.3s;">
+          Keluar
+        </button>
+      </div>
+    </div>
+
+    <!-- Harga & Nilai Tukar Section -->
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="coins" style="width: 14px; height: 14px;"></i> Harga & Nilai Tukar
+    </div>
+    <div style="margin-bottom: 16px;">
+      <label class="input-label">Kurs SGD ke Rupiah (Auto Sync API)</label>
+      <div id="live-sgd-status" style="font-family: 'Space Grotesk'; font-size: 15px; color: var(--success); display: flex; align-items: center; gap: 6px; background: var(--input-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--card-border);">
+        <i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px;"></i> Menyinkronkan...
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom: 16px;">
+      <div>
+        <label class="input-label">Emas Antam / Gram <a href="https://www.logammulia.com/id/sell/gold" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
+        <input type="text" inputmode="numeric" class="input-glass" id="set-antam" placeholder="0">
+      </div>
+      <div>
+        <label class="input-label">Emas Galeri24 / Gram <a href="https://galeri24.co.id/harga-emas" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
+        <input type="text" inputmode="numeric" class="input-glass" id="set-emas" placeholder="0">
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom: 0;">
+      <div>
+        <label class="input-label">Dinar KR <a href="https://dinarkr.com/" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
+        <input type="text" inputmode="numeric" class="input-glass" id="set-dinar" placeholder="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Dashboard & Chart -->
+  <div class="glass-card hero-card" style="padding-bottom: 24px;">
+    <div class="hero-lbl">Kekayaan Bersih (<span id="lbl-current-month"></span>)</div>
+    <div class="hero-val" id="global-net-worth" style="margin-bottom: 16px;">Rp 0</div>
+    
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+      <div style="flex: 1; background: rgba(56, 189, 248, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 16px;">
+        <div style="font-size: 11px; font-weight: 600; color: var(--txt-dim); text-transform: uppercase; margin-bottom: 4px;">Total Aset</div>
+        <div id="lbl-total-assets" style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--success);">Rp 0</div>
+      </div>
+      <div style="flex: 1; background: var(--danger-bg); border: 1px solid var(--danger-border); padding: 12px; border-radius: 16px;">
+        <div style="font-size: 11px; font-weight: 600; color: var(--danger-txt); text-transform: uppercase; margin-bottom: 4px;">Total Hutang</div>
+        <div class="debt-input-container" style="display: flex; align-items: center; justify-content: center; gap: 4px; border-bottom: 1px dashed var(--danger-txt); padding-bottom: 2px;">
+          <span style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--danger-txt);">Rp</span>
+          <input type="text" inputmode="numeric" id="input-debt" value="" placeholder="0" style="background: transparent; border: none; color: var(--danger-txt); font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; width: 100px; outline: none;">
+        </div>
+      </div>
+    </div>
+
+    <div style="height: 140px; width: 100%; position: relative;">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <div id="goals-container"></div>
+  <button id="btn-add-goal" class="btn-add-goal"><i data-lucide="folder-plus"></i> Tambah Tujuan Tabungan</button>
+</div>
+
+<!-- MODULE SCRIPT UNTUK FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // Konfigurasi Firebase dari Assets Liquid
+  const FB = {
+    apiKey: "AIzaSyDKUSL_DSRjORdxpLsahxLamOluOLIQss8",
+    authDomain: "assets-liquid.firebaseapp.com",
+    projectId: "assets-liquid",
+    storageBucket: "assets-liquid.firebasestorage.app",
+    messagingSenderId: "573395404798",
+    appId: "1:573395404798:web:b3f5c70f1d05500d6d62af"
+  };
+  
+  const fbApp = initializeApp(FB);
+  const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+  const provider = new GoogleAuthProvider();
+
+  let currentUser = null;
+  let syncListener = null;
+
+  let EXCHANGE_RATES = {
+    'IDR / Tabungan': 1, 'Saham (IDR)': 1, 'Reksadana (IDR)': 1, 'Obligasi (IDR)': 1,
+    'Kripto (IDR)': 1, 'Properti (IDR)': 1, 'SGD': 11800,
+    'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000
+  };
+
+  const UNITS = Object.keys(EXCHANGE_RATES);
+  const ICONS = { 'IDR / Tabungan': 'landmark', 'Saham (IDR)': 'trending-up', 'Reksadana (IDR)': 'pie-chart', 'Obligasi (IDR)': 'scroll-text', 'Kripto (IDR)': 'bitcoin', 'Properti (IDR)': 'home', 'SGD': 'banknote', 'Emas Antam (g)': 'coins', 'Emas G24 (g)': 'coins', 'Dinar KR': 'circle-dot' };
+  const CHART_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#f472b6', '#fb923c', '#e879f9'];
+
+  const getTodayMonthStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const formatTimestamp = (ts) => {
+    if(!ts) return '-';
+    const d = new Date(ts);
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+
+  const formatMonthLabel = (yyyy_mm) => {
+    const [y, m] = yyyy_mm.split('-');
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    return `${months[parseInt(m)-1]} ${y}`;
+  };
+
+  let currentMonthStr = getTodayMonthStr();
+  let trendChartInstance = null;
+
+  let state = {
+    theme: 'light',
+    rates: { 'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000 },
+    history: {} 
+  };
+
+  const defaultGoals = [
+    { id: 1, name: 'Dana Darurat', target: 50000000, collapsed: false, assets: [{ id: 101, name: 'Kas Rekening', unit: 'IDR / Tabungan', amount: 12500000 }, { id: 102, name: 'Emas Batangan', unit: 'Emas Antam (g)', amount: 5 }] }
+  ];
+
+  const loadLocalData = () => {
+    const saved = localStorage.getItem('liquid_assets_final');
+    if (saved) { 
+      try { let parsed = JSON.parse(saved); if(parsed.history) state = parsed; } catch (e) {} 
+    } else {
+      const oldSaved = localStorage.getItem('liquid_assets_v16');
+      if(oldSaved) { try { let parsed = JSON.parse(oldSaved); if(parsed.history) state = parsed; } catch(e) {} }
+    }
+
+    if (!state.history[currentMonthStr]) {
+      state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: 0, goals: JSON.parse(JSON.stringify(defaultGoals)) };
+    }
+    if (state.history[currentMonthStr].debt === undefined) state.history[currentMonthStr].debt = 0;
+
+    EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
+    EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
+    EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
+
+    monthFilterEl.value = currentMonthStr;
+    document.body.className = state.theme === 'light' ? 'light' : '';
+    document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
+  };
+
+  // --- FIREBASE SYNC: DEDICATED COLLECTION ---
+  async function saveToFB() {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'liquid_assets_users', currentUser.uid), { state: state }, { merge: true });
+    } catch(e) { console.error("Firebase save failed", e); }
+  }
+
+  document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
+  document.getElementById('up-logout').addEventListener('click', () => {
+    if(confirm('Yakin ingin keluar akun? Data lokal tetap aman.')) signOut(auth);
+  });
+
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('user-logged-out').style.display = 'none';
+      document.getElementById('user-logged-in').style.display = 'flex';
+      document.getElementById('up-avatar').src = user.photoURL || '';
+      document.getElementById('up-name').textContent = user.displayName || 'Pengguna';
+      document.getElementById('up-email').textContent = user.email || '';
+      
+      syncListener = onSnapshot(doc(db, 'liquid_assets_users', currentUser.uid), (docSnap) => {
+        if (docSnap.metadata.hasPendingWrites) return; 
+
+        if (docSnap.exists() && docSnap.data().state) {
+          state = docSnap.data().state;
+          
+          if (!state.history[currentMonthStr]) {
+            const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
+            let clonedGoals = []; let clonedDebt = 0;
+            if (pastMonths.length > 0) {
+              clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
+              clonedDebt = state.history[pastMonths[0]].debt || 0;
+            } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
+            state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
+          }
+          EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
+          EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
+          EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
+          
+          saveSilentLocalOnly();
+          renderUI(); 
+        } else {
+          saveToFB();
+        }
+      });
+
+    } else {
+      currentUser = null;
+      if (syncListener) { syncListener(); syncListener = null; } 
+      document.getElementById('user-logged-out').style.display = 'block';
+      document.getElementById('user-logged-in').style.display = 'none';
+    }
+  });
+
+  const saveSilentLocalOnly = () => localStorage.setItem('liquid_assets_final', JSON.stringify(state));
+  const saveSilent = () => {
+    saveSilentLocalOnly();
+    saveToFB(); 
+  };
+  const saveAndRender = () => { 
+    state.history[currentMonthStr].lastUpdated = Date.now();
+    saveSilent(); 
+    renderUI(); 
+  };
+
+  const monthFilterEl = document.getElementById('month-filter');
+  loadLocalData();
+
+  monthFilterEl.addEventListener('change', (e) => {
+    const selected = e.target.value;
+    if (!selected) return;
+    currentMonthStr = selected;
+
+    if (!state.history[currentMonthStr]) {
+      const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
+      let clonedGoals = []; let clonedDebt = 0;
+      if (pastMonths.length > 0) {
+        clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
+        clonedDebt = state.history[pastMonths[0]].debt || 0;
+      } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
+      state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
+    }
+    saveAndRender();
+  });
+
+  document.getElementById('btn-theme').addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    document.body.className = state.theme === 'light' ? 'light' : '';
+    document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
+    window.lucide.createIcons();
+    renderTrendChart();
+    saveSilent();
+  });
+
+  const panel = document.getElementById('settings-panel');
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    document.getElementById('set-antam').value = state.rates['Emas Antam (g)'].toLocaleString('id-ID');
+    document.getElementById('set-emas').value = state.rates['Emas G24 (g)'].toLocaleString('id-ID');
+    document.getElementById('set-dinar').value = state.rates['Dinar KR'].toLocaleString('id-ID');
+  });
+  document.getElementById('close-settings').addEventListener('click', () => panel.style.display = 'none');
+
+  const attachRateSetting = (id, key) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', function() {
+      let rawVal = this.value.replace(/\D/g, '');
+      if (!rawVal) { this.value = ''; return; }
+      let start = this.selectionStart;
+      let oldLen = this.value.length;
+      let numVal = parseInt(rawVal, 10);
+      let formatted = numVal.toLocaleString('id-ID');
+      this.value = formatted;
+      this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
+      
+      state.rates[key] = numVal;
+      EXCHANGE_RATES[key] = numVal;
+      saveSilent();
+      updateDynamicValues();
+    });
+  };
+  attachRateSetting('set-antam', 'Emas Antam (g)');
+  attachRateSetting('set-emas', 'Emas G24 (g)');
+  attachRateSetting('set-dinar', 'Dinar KR');
+
+  async function fetchLiveRates() {
+    const statusEl = document.getElementById('live-sgd-status');
+    try {
+      const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const data = await res.json();
+      const sgdRate = data.rates.IDR / data.rates.SGD; 
+      EXCHANGE_RATES.SGD = sgdRate;
+      statusEl.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Rp ${Math.round(sgdRate).toLocaleString('id-ID')} (Live API)`;
+      statusEl.style.color = 'var(--success)';
+      window.lucide.createIcons();
+      updateDynamicValues(); 
+    } catch (err) {
+      statusEl.innerHTML = `<i data-lucide="wifi-off" style="width: 16px; height: 16px;"></i> Mode Offline (Rp ${Math.round(EXCHANGE_RATES.SGD).toLocaleString('id-ID')})`;
+      statusEl.style.color = 'var(--txt-dim)';
+      window.lucide.createIcons();
+    }
+  }
+
+  document.getElementById('input-debt').addEventListener('input', function() {
+    let rawVal = this.value.replace(/\D/g, '');
+    if (!rawVal) { 
+      this.value = ''; 
+      state.history[currentMonthStr].debt = 0; 
+    } else {
+      let start = this.selectionStart;
+      let oldLen = this.value.length;
+      let numVal = parseInt(rawVal, 10);
+      let formatted = numVal.toLocaleString('id-ID');
+      
+      this.value = formatted;
+      this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
+      state.history[currentMonthStr].debt = numVal;
+    }
+    state.history[currentMonthStr].lastUpdated = Date.now();
+    saveSilent(); 
+    updateDynamicValues();
+  });
+
+  const renderTrendChart = () => {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    const months = Object.keys(state.history).sort();
+    const labels = months.map(formatMonthLabel);
+    const dataPoints = months.map(m => state.history[m].netWorth || 0);
+
+    const isLight = document.body.classList.contains('light');
+    const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+    const textColor = isLight ? '#64748b' : '#94a3b8';
+
+    if (trendChartInstance) trendChartInstance.destroy();
+
+    trendChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Kekayaan Bersih',
+          data: dataPoints,
+          borderColor: '#38bdf8',
+          backgroundColor: 'rgba(56, 189, 248, 0.1)',
+          borderWidth: 2,
+          pointBackgroundColor: '#0f172a',
+          pointBorderColor: '#38bdf8',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function(context) { return 'Rp ' + context.parsed.y.toLocaleString('id-ID'); } } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textColor, font: {family: 'Outfit', size: 10} } },
+          y: { 
+            grid: { color: gridColor }, 
+            ticks: { 
+              color: textColor, font: {family: 'Outfit', size: 10},
+              callback: function(value) { return 'Rp ' + (value/1000000) + ' Jt'; }
+            } 
+          }
+        }
+      }
+    });
+  };
+
+  const updateDynamicValues = () => {
+    let globalGrossAssets = 0;
+    const currentGoals = state.history[currentMonthStr].goals;
+
+    currentGoals.forEach((goal, gIdx) => {
+      let goalTotalIDR = 0;
+      let chartData = [];
+
+      goal.assets.forEach((a, aIdx) => {
+        let unitKey = a.unit;
+        const rate = EXCHANGE_RATES[unitKey] || 1;
+        const idrVal = a.amount * rate;
+        goalTotalIDR += idrVal;
+
+        const equivEl = document.getElementById(`equiv-${gIdx}-${aIdx}`);
+        if(equivEl) {
+          equivEl.textContent = unitKey.includes('IDR') ? '' : `≈ Rp ${Math.round(idrVal).toLocaleString('id-ID')}`;
+        }
+        if(idrVal > 0) {
+          chartData.push({ name: a.name || 'Aset', val: idrVal, color: CHART_COLORS[aIdx % CHART_COLORS.length] });
+        }
+      });
+
+      globalGrossAssets += goalTotalIDR;
+
+      const target = goal.target || 0;
+      let pct = target > 0 ? (goalTotalIDR / target) * 100 : 0;
+      if (pct > 100) pct = 100;
+
+      const ui = {
+        badge: document.getElementById(`pct-badge-${gIdx}`),
+        progMain: document.getElementById(`prog-main-${gIdx}`),
+        progMini: document.getElementById(`prog-mini-${gIdx}`),
+        miniStat: document.getElementById(`mini-stat-${gIdx}`),
+        statColl: document.getElementById(`stat-coll-${gIdx}`),
+        statRem: document.getElementById(`stat-rem-${gIdx}`),
+        chart: document.getElementById(`chart-${gIdx}`),
+        legend: document.getElementById(`legend-${gIdx}`)
+      };
+
+      if(ui.badge) ui.badge.textContent = `${Math.round(pct)}% Tercapai`;
+      if(ui.progMain) ui.progMain.style.width = `${pct}%`;
+      if(ui.progMini) ui.progMini.style.width = `${pct}%`;
+      if(ui.miniStat) ui.miniStat.textContent = `Terkumpul: Rp ${Math.round(goalTotalIDR).toLocaleString('id-ID')}`;
+      if(ui.statColl) ui.statColl.textContent = `Rp ${Math.round(goalTotalIDR).toLocaleString('id-ID')}`;
+      if(ui.statRem) ui.statRem.textContent = `Rp ${Math.max(0, target - goalTotalIDR).toLocaleString('id-ID')}`;
+
+      if(ui.chart && ui.legend) {
+        if(goalTotalIDR === 0) {
+          ui.chart.style.background = 'var(--track-bg)';
+          ui.legend.innerHTML = '<span style="opacity:0.5">Belum ada aset</span>';
+        } else {
+          let gradient = [];
+          let currentPct = 0;
+          let legendHTML = '';
+          chartData.forEach(cd => {
+            let slicePct = (cd.val / goalTotalIDR) * 100;
+            gradient.push(`${cd.color} ${currentPct}% ${currentPct + slicePct}%`);
+            currentPct += slicePct;
+            legendHTML += `<div class="legend-item"><div class="legend-dot" style="background:${cd.color}"></div>${cd.name} (${Math.round(slicePct)}%)</div>`;
+          });
+          ui.chart.style.background = `conic-gradient(${gradient.join(', ')})`;
+          ui.legend.innerHTML = legendHTML;
+        }
+      }
+    });
+
+    const currentDebt = state.history[currentMonthStr].debt || 0;
+    const netWorth = globalGrossAssets - currentDebt;
+
+    state.history[currentMonthStr].netWorth = netWorth;
+    
+    document.getElementById('lbl-current-month').textContent = formatMonthLabel(currentMonthStr);
+    document.getElementById('lbl-total-assets').textContent = `Rp ${Math.round(globalGrossAssets).toLocaleString('id-ID')}`;
+    
+    const nwEl = document.getElementById('global-net-worth');
+    nwEl.textContent = `Rp ${Math.round(netWorth).toLocaleString('id-ID')}`;
+    nwEl.style.color = netWorth < 0 ? 'var(--danger-txt)' : 'var(--success)';
+
+    const debtInput = document.getElementById('input-debt');
+    if (document.activeElement !== debtInput) {
+      debtInput.value = currentDebt === 0 ? '' : currentDebt.toLocaleString('id-ID');
+    }
+
+    document.getElementById('last-updated-lbl').innerHTML = `<i data-lucide="clock" style="width:10px;height:10px;display:inline-block;margin-right:2px;vertical-align:middle;"></i> Updated: ${formatTimestamp(state.history[currentMonthStr].lastUpdated)}`;
+    
+    window.lucide.createIcons();
+    renderTrendChart();
+  };
+
+  const attachRealtimeFormat = (inputEl, updateCallback, unit) => {
+    inputEl.addEventListener('input', function() {
+      if (unit.includes('IDR') || unit === 'TARGET') {
+        let rawVal = this.value.replace(/\D/g, '');
+        if (!rawVal) { this.value = ''; updateCallback(0); } else {
+          let start = this.selectionStart;
+          let oldLen = this.value.length;
+          let numVal = parseInt(rawVal, 10);
+          let formatted = numVal.toLocaleString('id-ID');
+          
+          this.value = formatted;
+          this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
+          updateCallback(numVal);
+        }
+      } else {
+        let rawVal = this.value.replace(/[^0-9.]/g, '');
+        this.value = rawVal;
+        updateCallback(parseFloat(rawVal) || 0);
+      }
+      
+      state.history[currentMonthStr].lastUpdated = Date.now();
+      saveSilent(); 
+      updateDynamicValues();
+    });
+  };
+
+  window.toggleCollapse = (gIdx) => {
+    state.history[currentMonthStr].goals[gIdx].collapsed = !state.history[currentMonthStr].goals[gIdx].collapsed;
+    const card = document.getElementById(`goal-card-${gIdx}`);
+    state.history[currentMonthStr].goals[gIdx].collapsed ? card.classList.add('is-collapsed') : card.classList.remove('is-collapsed');
+    saveSilent();
+  };
+
+  const renderUI = () => {
+    const container = document.getElementById('goals-container');
+    container.innerHTML = '';
+    const currentGoals = state.history[currentMonthStr].goals;
+
+    currentGoals.forEach((goal, gIdx) => {
+      const card = document.createElement('div');
+      card.className = `glass-card ${goal.collapsed ? 'is-collapsed' : ''}`;
+      card.id = `goal-card-${gIdx}`;
+      
+      let assetsHTML = goal.assets.length === 0 
+        ? `<div style="text-align:center; padding: 10px; color: var(--txt-dim); font-size: 13px;">Belum ada aset di bulan ini.</div>`
+        : goal.assets.map((a, aIdx) => {
+            const formatVal = a.unit.includes('IDR') ? (a.amount ? a.amount.toLocaleString('id-ID') : '') : (a.amount || '');
+            return `
+            <div class="asset-item">
+              <div class="asset-icon"><i data-lucide="${ICONS[a.unit] || 'circle-dollar-sign'}"></i></div>
+              <div class="asset-info">
+                <input class="asset-name" type="text" value="${a.name}" placeholder="Nama Aset" data-gidx="${gIdx}" data-aidx="${aIdx}">
+              </div>
+              <div class="asset-val-group">
+                <div class="val-input-row">
+                  <input class="asset-amount" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}">
+                  <select class="asset-unit" data-gidx="${gIdx}" data-aidx="${aIdx}">
+                    ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="asset-equiv" id="equiv-${gIdx}-${aIdx}"></div>
+              </div>
+              <button class="btn-del btn-del-asset" data-gidx="${gIdx}" data-aidx="${aIdx}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
+            </div>
+            `;
+          }).join('');
+
+      card.innerHTML = `
+        <div class="goal-header" onclick="window.toggleCollapse(${gIdx})">
+          <div style="flex:1; min-width:0;">
+            <input class="goal-title-input" list="goal-suggestions" value="${goal.name}" placeholder="Tujuan Tabungan" onclick="event.stopPropagation()">
+            <div class="mini-summary">
+              <div class="mini-stat" id="mini-stat-${gIdx}">Terkumpul: Rp 0</div>
+              <div class="progress-mini"><div class="progress-fill" id="prog-mini-${gIdx}" style="width: 0%"></div></div>
+            </div>
+          </div>
+          <button class="btn-collapse"><i data-lucide="chevron-up"></i></button>
+        </div>
+        
+        <div class="card-body">
+          <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
+            <div>
+              <label class="input-label">Target Dana (Rp)</label>
+              <input type="text" inputmode="numeric" class="input-glass goal-target-input" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0">
+            </div>
+            <div style="text-align: right;"><span class="pct-badge" id="pct-badge-${gIdx}">0% Tercapai</span></div>
+          </div>
+
+          <div class="progress-wrapper">
+            <div class="progress-glass"><div class="progress-fill" id="prog-main-${gIdx}" style="width: 0%;"></div></div>
+            <div class="progress-stats">
+              <div><div class="stat-label">Terkumpul</div><div class="stat-val success" id="stat-coll-${gIdx}">Rp 0</div></div>
+              <div style="text-align: right;"><div class="stat-label">Kekurangan</div><div class="stat-val" id="stat-rem-${gIdx}">Rp 0</div></div>
+            </div>
+          </div>
+
+          <div class="chart-section">
+             <div class="donut-chart" id="chart-${gIdx}"></div>
+             <div class="chart-legend" id="legend-${gIdx}"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 12px;">
+             <div class="asset-section-title" style="margin:0"><i data-lucide="layers" style="width:14px; height:14px;"></i> Aset Disimpan</div>
+             <button class="btn-del-goal" data-gidx="${gIdx}" title="Hapus Tabungan"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
+          </div>
+          <div class="asset-list-container">${assetsHTML}</div>
+          <button class="btn-add-asset" data-gidx="${gIdx}">+ Tambah Catatan Aset</button>
+        </div>
+      `;
+      container.appendChild(card);
+
+      card.querySelector('.goal-title-input').addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].name = e.target.value; saveAndRender(); });
+      attachRealtimeFormat(card.querySelector('.goal-target-input'), (v) => { state.history[currentMonthStr].goals[gIdx].target = v; }, 'TARGET');
+
+      card.querySelectorAll('.asset-name').forEach(el => el.addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].name = e.target.value; saveAndRender(); }));
+      
+      card.querySelectorAll('.asset-unit').forEach(el => {
+        el.addEventListener('change', e => { 
+          state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].unit = e.target.value; 
+          saveAndRender(); 
+        });
+      });
+      
+      card.querySelectorAll('.asset-amount').forEach(el => {
+        attachRealtimeFormat(el, (v) => { state.history[currentMonthStr].goals[gIdx].assets[el.dataset.aidx].amount = v; }, el.dataset.unit);
+      });
+
+      card.querySelector('.btn-del-goal').addEventListener('click', (e) => {
+        e.stopPropagation(); if(confirm('Yakin ingin menghapus tujuan tabungan ini?')) { state.history[currentMonthStr].goals.splice(gIdx, 1); saveAndRender(); }
+      });
+      card.querySelector('.btn-add-asset').addEventListener('click', () => {
+        state.history[currentMonthStr].goals[gIdx].assets.push({ id: Date.now(), name: '', unit: 'IDR / Tabungan', amount: 0 }); saveAndRender();
+      });
+      card.querySelectorAll('.btn-del-asset').forEach(el => el.addEventListener('click', e => {
+        state.history[currentMonthStr].goals[gIdx].assets.splice(e.currentTarget.dataset.aidx, 1); saveAndRender();
+      }));
+    });
+
+    window.lucide.createIcons();
+    updateDynamicValues(); 
+  };
+
+  document.getElementById('btn-add-goal').addEventListener('click', () => {
+    state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
+    saveAndRender();
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+  });
+
+  renderUI();
+  fetchLiveRates();
+</script>
+</body>
+</html>

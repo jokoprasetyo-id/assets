@@ -7,7 +7,7 @@
   "theme_color": "#38bdf8",
   "icons": [
     {
-      "src": "https://www.flaticon.com/free-icon/money-growth_13334971?related_id=13334971",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

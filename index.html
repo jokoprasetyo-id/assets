@@ -12,7 +12,7 @@
   :root {
     --bg: #0f172a; --card-bg: rgba(255, 255, 255, 0.03); --card-border: rgba(255, 255, 255, 0.08);
     --card-highlight: rgba(255, 255, 255, 0.15); --txt-main: #f8fafc; --txt-dim: #94a3b8;
-    --accent: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.5); --success: #34d399;
+    --accent: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.5); --success: #34d399; --warning: #fbbf24;
     --input-bg: rgba(0, 0, 0, 0.2); --item-bg: rgba(255, 255, 255, 0.02); --track-bg: rgba(0, 0, 0, 0.3);
     --danger-bg: rgba(239, 68, 68, 0.1); --danger-border: rgba(239, 68, 68, 0.2); --danger-txt: #ef4444;
     --blob-opacity: 0.5;
@@ -20,7 +20,7 @@
   body.light {
     --bg: #f1f5f9; --card-bg: rgba(255, 255, 255, 0.6); --card-border: rgba(255, 255, 255, 1);
     --card-highlight: rgba(255, 255, 255, 0.9); --txt-main: #0f172a; --txt-dim: #64748b;
-    --accent: #0284c7; --accent-glow: rgba(2, 132, 199, 0.3); --success: #059669;
+    --accent: #0284c7; --accent-glow: rgba(2, 132, 199, 0.3); --success: #059669; --warning: #d97706;
     --input-bg: rgba(255, 255, 255, 0.7); --item-bg: rgba(255, 255, 255, 0.5); --track-bg: rgba(0, 0, 0, 0.08);
     --danger-bg: rgba(239, 68, 68, 0.15); --danger-border: rgba(239, 68, 68, 0.3); --danger-txt: #dc2626;
     --blob-opacity: 0.8;
@@ -39,6 +39,7 @@
   .blob-2 { background: #8b5cf6; width: 35vw; height: 35vw; bottom: -10%; right: -5%; animation-delay: -5s; }
   .blob-3 { background: #0ea5e9; width: 30vw; height: 30vw; top: 40%; left: 30%; animation-delay: -10s; mix-blend-mode: screen; }
   @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 30px) scale(1.1); } }
+  
   .app-container { width: 100%; max-width: 600px; z-index: 1; }
   .top-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
   header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1.2; }
@@ -47,17 +48,33 @@
   .last-updated { font-size: 11px; color: var(--txt-dim); }
   .top-actions { display: flex; gap: 8px; }
   .btn-icon { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-main); width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s; }
+  
   .glass-card { background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--card-border); border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
   .hero-card { text-align: center; padding: 32px 24px; }
   .hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 8px; }
   .hero-val { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; letter-spacing: -1px; }
   
-  /* Recap Section */
+  /* RECAP & HEALTH SECTION */
   .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
   .recap-item { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; transition: all 0.3s; }
   .recap-item:hover { border-color: var(--accent); background: var(--card-highlight); }
   .recap-label { font-size: 11px; color: var(--txt-dim); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
   .recap-val { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--txt-main); }
+  
+  .health-badge { display: inline-flex; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; font-family: 'Space Grotesk'; text-transform: uppercase; margin-top: 6px; align-self: flex-start;}
+  .hb-good { background: rgba(52, 211, 153, 0.2); color: var(--success); border: 1px solid rgba(52, 211, 153, 0.3); }
+  .hb-warn { background: rgba(251, 191, 36, 0.2); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
+  .hb-bad { background: rgba(239, 68, 68, 0.2); color: var(--danger-txt); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+  /* PRIVACY MODE STYLES */
+  body.privacy-on .mask-data { 
+    filter: blur(6px); 
+    opacity: 0.8;
+    user-select: none; 
+    pointer-events: none; 
+    transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+  .mask-data { transition: filter 0.3s ease, opacity 0.3s ease; }
 
   #settings-panel { display: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); animation: slideDown 0.3s ease; }
   @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
@@ -89,20 +106,7 @@
   .asset-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; color: var(--accent); flex-shrink: 0; }
   .asset-info { flex: 1; min-width: 0; }
   
-  /* FIX: Kotak Input Nama Aset Agar Mudah Diklik */
-  .asset-name { 
-    font-size: 14px; 
-    font-weight: 600; 
-    background: var(--input-bg); 
-    border: 1px solid var(--card-border); 
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: var(--txt-main); 
-    width: 100%; 
-    outline: none; 
-    margin-bottom: 4px; 
-    transition: all 0.3s;
-  }
+  .asset-name { font-size: 14px; font-weight: 600; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 12px; color: var(--txt-main); width: 100%; outline: none; margin-bottom: 4px; transition: all 0.3s; }
   .asset-name:focus { border-color: var(--accent); background: var(--card-highlight); }
   
   .asset-val-group { display: flex; flex-direction: column; align-items: flex-end; }
@@ -141,7 +145,11 @@
       </div>
     </header>
     <div class="top-actions">
-      <button class="btn-icon" id="btn-settings" title="Pengaturan Harga">
+      <!-- Tombol Mode Privasi -->
+      <button class="btn-icon" id="btn-privacy" title="Mode Privasi (Sensor Nilai)">
+        <i data-lucide="eye"></i>
+      </button>
+      <button class="btn-icon" id="btn-settings" title="Pengaturan">
         <i data-lucide="settings"></i>
       </button>
       <button class="btn-icon" id="btn-theme" title="Ganti Tema">
@@ -213,18 +221,18 @@
   <!-- Global Dashboard & Chart -->
   <div class="glass-card hero-card" style="padding-bottom: 24px;">
     <div class="hero-lbl">Kekayaan Bersih (<span id="lbl-current-month"></span>)</div>
-    <div class="hero-val" id="global-net-worth" style="margin-bottom: 16px;">Rp 0</div>
+    <div class="hero-val mask-data" id="global-net-worth" style="margin-bottom: 16px;">Rp 0</div>
     
     <div style="display: flex; gap: 12px; margin-bottom: 24px;">
       <div style="flex: 1; background: rgba(56, 189, 248, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 16px;">
         <div style="font-size: 11px; font-weight: 600; color: var(--txt-dim); text-transform: uppercase; margin-bottom: 4px;">Total Aset</div>
-        <div id="lbl-total-assets" style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--success);">Rp 0</div>
+        <div id="lbl-total-assets" class="mask-data" style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--success);">Rp 0</div>
       </div>
       <div style="flex: 1; background: var(--danger-bg); border: 1px solid var(--danger-border); padding: 12px; border-radius: 16px;">
         <div style="font-size: 11px; font-weight: 600; color: var(--danger-txt); text-transform: uppercase; margin-bottom: 4px;">Total Hutang</div>
         <div class="debt-input-container" style="display: flex; align-items: center; justify-content: center; gap: 4px; border-bottom: 1px dashed var(--danger-txt); padding-bottom: 2px;">
           <span style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--danger-txt);">Rp</span>
-          <input type="text" inputmode="numeric" id="input-debt" value="" placeholder="0" style="background: transparent; border: none; color: var(--danger-txt); font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; width: 100px; outline: none;">
+          <input type="text" inputmode="numeric" id="input-debt" class="mask-data" value="" placeholder="0" style="background: transparent; border: none; color: var(--danger-txt); font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; width: 100px; outline: none;">
         </div>
       </div>
     </div>
@@ -234,12 +242,17 @@
     </div>
   </div>
 
-  <!-- REKAPITULASI ASET -->
+  <!-- REKAPITULASI & HEALTH SCORE -->
   <div class="glass-card" style="padding: 20px;">
     <div class="asset-section-title" style="margin-bottom: 4px;"><i data-lucide="pie-chart" style="width:16px; height:16px;"></i> Rekapitulasi Aset</div>
-    <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 12px;">Total nilai aset berdasarkan kategorinya di bulan ini.</div>
-    <div class="recap-grid" id="recap-container">
-      <!-- Item rekap akan dimuat lewat JS -->
+    <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 12px;">Total nilai berdasarkan tipe instrumen bulan ini.</div>
+    <div class="recap-grid" id="recap-container" style="margin-bottom: 20px;">
+      <!-- Item rekap dimuat lewat JS -->
+    </div>
+    
+    <div class="asset-section-title" style="margin-bottom: 4px; padding-top: 16px; border-top: 1px dashed var(--card-border);"><i data-lucide="activity" style="width:16px; height:16px;"></i> Skor Kesehatan Keuangan</div>
+    <div class="recap-grid" id="health-container">
+      <!-- Item skor kesehatan dimuat lewat JS -->
     </div>
   </div>
 
@@ -253,7 +266,6 @@
   import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // Konfigurasi Firebase dari Assets Liquid
   const FB = {
     apiKey: "AIzaSyDKUSL_DSRjORdxpLsahxLamOluOLIQss8",
     authDomain: "assets-liquid.firebaseapp.com",
@@ -304,6 +316,7 @@
 
   let state = {
     theme: 'light',
+    privacy: false, // State Privasi Default
     rates: { 'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000 },
     history: {} 
   };
@@ -330,6 +343,10 @@
     monthFilterEl.value = currentMonthStr;
     document.body.className = state.theme === 'light' ? 'light' : '';
     document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
+    
+    // Set status awal Privacy Mode
+    if(state.privacy) document.body.classList.add('privacy-on');
+    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
   };
 
   // Firebase Sync
@@ -372,6 +389,12 @@
           EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
           EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
           EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
+          
+          // Re-apply privacy icon & class correctly from pulled state
+          if(state.privacy) document.body.classList.add('privacy-on'); 
+          else document.body.classList.remove('privacy-on');
+          document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
+          window.lucide.createIcons();
           
           saveSilentLocalOnly();
           renderUI(); 
@@ -422,9 +445,19 @@
   document.getElementById('btn-theme').addEventListener('click', () => {
     state.theme = state.theme === 'light' ? 'dark' : 'light';
     document.body.className = state.theme === 'light' ? 'light' : '';
+    if(state.privacy) document.body.classList.add('privacy-on');
     document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
     window.lucide.createIcons();
     renderTrendChart();
+    saveSilent();
+  });
+
+  // Tombol Toggle Privasi
+  document.getElementById('btn-privacy').addEventListener('click', () => {
+    state.privacy = !state.privacy;
+    document.body.classList.toggle('privacy-on', state.privacy);
+    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
+    window.lucide.createIcons();
     saveSilent();
   });
 
@@ -654,12 +687,42 @@
           recapContainer.innerHTML += `
             <div class="recap-item">
               <div class="recap-label"><i data-lucide="${ICONS[unit] || 'circle-dollar-sign'}" style="width:12px;height:12px;"></i> ${unit}</div>
-              <div class="recap-val">Rp ${Math.round(totalVal).toLocaleString('id-ID')}</div>
+              <div class="recap-val mask-data">Rp ${Math.round(totalVal).toLocaleString('id-ID')}</div>
             </div>
           `;
         }
       }
     }
+
+    // Render Health Score UI
+    const healthContainer = document.getElementById('health-container');
+    healthContainer.innerHTML = '';
+    
+    // 1. Debt Ratio (Beban Hutang)
+    let debtRatio = globalGrossAssets > 0 ? (currentDebt / globalGrossAssets) * 100 : (currentDebt > 0 ? 100 : 0);
+    let debtClass = debtRatio === 0 ? 'hb-good' : (debtRatio <= 30 ? 'hb-warn' : 'hb-bad');
+    let debtText = debtRatio === 0 ? 'Bebas Hutang' : (debtRatio <= 30 ? 'Aman' : 'Beban Tinggi');
+    
+    healthContainer.innerHTML += `
+      <div class="recap-item">
+        <div class="recap-label">Rasio Hutang</div>
+        <div class="recap-val">${debtRatio.toFixed(1)}%</div>
+        <div class="health-badge ${debtClass}">${debtText}</div>
+      </div>
+    `;
+
+    // 2. Diversification (Penyebaran Aset)
+    let diversCount = Object.keys(recapData).length;
+    let divClass = diversCount >= 3 ? 'hb-good' : (diversCount === 2 ? 'hb-warn' : 'hb-bad');
+    let divText = diversCount >= 3 ? 'Sangat Baik' : (diversCount === 2 ? 'Cukup' : 'Kurang Menyebar');
+    
+    healthContainer.innerHTML += `
+      <div class="recap-item">
+        <div class="recap-label">Diversifikasi</div>
+        <div class="recap-val">${diversCount} Kategori</div>
+        <div class="health-badge ${divClass}">${divText}</div>
+      </div>
+    `;
 
     window.lucide.createIcons();
     renderTrendChart();
@@ -719,12 +782,12 @@
                 <input class="asset-name" type="text" value="${a.name}" placeholder="Tulis Nama Aset..." data-gidx="${gIdx}" data-aidx="${aIdx}">
                 <div class="asset-val-group" style="align-items: flex-start;">
                   <div class="val-input-row">
-                    <input class="asset-amount" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}" style="text-align: left; width: 120px;">
+                    <input class="asset-amount mask-data" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}" style="text-align: left; width: 120px;">
                     <select class="asset-unit" data-gidx="${gIdx}" data-aidx="${aIdx}">
                       ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
                     </select>
                   </div>
-                  <div class="asset-equiv" id="equiv-${gIdx}-${aIdx}"></div>
+                  <div class="asset-equiv mask-data" id="equiv-${gIdx}-${aIdx}"></div>
                 </div>
               </div>
               <button class="btn-del btn-del-asset" data-gidx="${gIdx}" data-aidx="${aIdx}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
@@ -737,7 +800,7 @@
           <div style="flex:1; min-width:0;">
             <input class="goal-title-input" list="goal-suggestions" value="${goal.name}" placeholder="Tujuan Tabungan" onclick="event.stopPropagation()">
             <div class="mini-summary">
-              <div class="mini-stat" id="mini-stat-${gIdx}">Terkumpul: Rp 0</div>
+              <div class="mini-stat mask-data" id="mini-stat-${gIdx}">Terkumpul: Rp 0</div>
               <div class="progress-mini"><div class="progress-fill" id="prog-mini-${gIdx}" style="width: 0%"></div></div>
             </div>
           </div>
@@ -748,7 +811,7 @@
           <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
             <div>
               <label class="input-label">Target Dana (Rp)</label>
-              <input type="text" inputmode="numeric" class="input-glass goal-target-input" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0">
+              <input type="text" inputmode="numeric" class="input-glass goal-target-input mask-data" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0">
             </div>
             <div style="text-align: right;"><span class="pct-badge" id="pct-badge-${gIdx}">0% Tercapai</span></div>
           </div>
@@ -756,8 +819,8 @@
           <div class="progress-wrapper">
             <div class="progress-glass"><div class="progress-fill" id="prog-main-${gIdx}" style="width: 0%;"></div></div>
             <div class="progress-stats">
-              <div><div class="stat-label">Terkumpul</div><div class="stat-val success" id="stat-coll-${gIdx}">Rp 0</div></div>
-              <div style="text-align: right;"><div class="stat-label">Kekurangan</div><div class="stat-val" id="stat-rem-${gIdx}">Rp 0</div></div>
+              <div><div class="stat-label">Terkumpul</div><div class="stat-val success mask-data" id="stat-coll-${gIdx}">Rp 0</div></div>
+              <div style="text-align: right;"><div class="stat-label">Kekurangan</div><div class="stat-val mask-data" id="stat-rem-${gIdx}">Rp 0</div></div>
             </div>
           </div>
 
@@ -818,7 +881,6 @@
 </script>
 
 <script>
-  // Registrasi Service Worker untuk PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(err => console.log('PWA SW Gagal:', err));
   }

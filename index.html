@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Liquid Assets Tracker</title>
+<link rel="manifest" href="manifest.json">
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -50,6 +51,14 @@
   .hero-card { text-align: center; padding: 32px 24px; }
   .hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 8px; }
   .hero-val { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; letter-spacing: -1px; }
+  
+  /* Recap Section */
+  .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .recap-item { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; transition: all 0.3s; }
+  .recap-item:hover { border-color: var(--accent); background: var(--card-highlight); }
+  .recap-label { font-size: 11px; color: var(--txt-dim); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .recap-val { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--txt-main); }
+
   #settings-panel { display: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); animation: slideDown 0.3s ease; }
   @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
   .link-cek { color: var(--accent); text-decoration: none; font-size: 10px; font-weight: 700; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 100px; margin-left: 6px; display: inline-flex; align-items: center; gap: 2px; }
@@ -74,11 +83,28 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; align-items: end; }
   .input-label { display: block; font-size: 12px; color: var(--txt-dim); margin-bottom: 8px; font-weight: 500; }
   .input-glass { width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 16px; color: var(--txt-main); font-family: inherit; font-size: 15px; outline: none; transition: all 0.3s; }
+  
   .asset-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
   .asset-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--item-bg); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 8px; transition: background 0.3s; }
   .asset-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; color: var(--accent); flex-shrink: 0; }
   .asset-info { flex: 1; min-width: 0; }
-  .asset-name { font-size: 14px; font-weight: 600; background: transparent; border: none; color: var(--txt-main); width: 100%; outline: none; margin-bottom: 2px; }
+  
+  /* FIX: Kotak Input Nama Aset Agar Mudah Diklik */
+  .asset-name { 
+    font-size: 14px; 
+    font-weight: 600; 
+    background: var(--input-bg); 
+    border: 1px solid var(--card-border); 
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--txt-main); 
+    width: 100%; 
+    outline: none; 
+    margin-bottom: 4px; 
+    transition: all 0.3s;
+  }
+  .asset-name:focus { border-color: var(--accent); background: var(--card-highlight); }
+  
   .asset-val-group { display: flex; flex-direction: column; align-items: flex-end; }
   .val-input-row { display: flex; align-items: center; gap: 4px; }
   .asset-amount { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--success); background: transparent; border: none; outline: none; text-align: right; width: 85px; }
@@ -133,7 +159,6 @@
       <button class="btn-collapse" id="close-settings"><i data-lucide="x"></i></button>
     </div>
 
-    <!-- Akun & Cloud Sync Section -->
     <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border);">
       <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
         <i data-lucide="cloud-upload" style="width: 14px; height: 14px;"></i> Cloud Sync
@@ -158,7 +183,6 @@
       </div>
     </div>
 
-    <!-- Harga & Nilai Tukar Section -->
     <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
         <i data-lucide="coins" style="width: 14px; height: 14px;"></i> Harga & Nilai Tukar
     </div>
@@ -210,11 +234,20 @@
     </div>
   </div>
 
+  <!-- REKAPITULASI ASET -->
+  <div class="glass-card" style="padding: 20px;">
+    <div class="asset-section-title" style="margin-bottom: 4px;"><i data-lucide="pie-chart" style="width:16px; height:16px;"></i> Rekapitulasi Aset</div>
+    <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 12px;">Total nilai aset berdasarkan kategorinya di bulan ini.</div>
+    <div class="recap-grid" id="recap-container">
+      <!-- Item rekap akan dimuat lewat JS -->
+    </div>
+  </div>
+
   <div id="goals-container"></div>
   <button id="btn-add-goal" class="btn-add-goal"><i data-lucide="folder-plus"></i> Tambah Tujuan Tabungan</button>
 </div>
 
-<!-- MODULE SCRIPT UNTUK FIREBASE -->
+<!-- MODULE SCRIPT UNTUK FIREBASE & LOGIC -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -283,9 +316,6 @@
     const saved = localStorage.getItem('liquid_assets_final');
     if (saved) { 
       try { let parsed = JSON.parse(saved); if(parsed.history) state = parsed; } catch (e) {} 
-    } else {
-      const oldSaved = localStorage.getItem('liquid_assets_v16');
-      if(oldSaved) { try { let parsed = JSON.parse(oldSaved); if(parsed.history) state = parsed; } catch(e) {} }
     }
 
     if (!state.history[currentMonthStr]) {
@@ -302,7 +332,7 @@
     document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
   };
 
-  // --- FIREBASE SYNC: DEDICATED COLLECTION ---
+  // Firebase Sync
   async function saveToFB() {
     if (!currentUser) return;
     try {
@@ -522,6 +552,9 @@
   const updateDynamicValues = () => {
     let globalGrossAssets = 0;
     const currentGoals = state.history[currentMonthStr].goals;
+    
+    // Objek untuk Rekapitulasi Data
+    let recapData = {};
 
     currentGoals.forEach((goal, gIdx) => {
       let goalTotalIDR = 0;
@@ -532,6 +565,10 @@
         const rate = EXCHANGE_RATES[unitKey] || 1;
         const idrVal = a.amount * rate;
         goalTotalIDR += idrVal;
+        
+        // Kalkulasi Rekap
+        if (!recapData[unitKey]) recapData[unitKey] = 0;
+        recapData[unitKey] += idrVal;
 
         const equivEl = document.getElementById(`equiv-${gIdx}-${aIdx}`);
         if(equivEl) {
@@ -605,6 +642,25 @@
 
     document.getElementById('last-updated-lbl').innerHTML = `<i data-lucide="clock" style="width:10px;height:10px;display:inline-block;margin-right:2px;vertical-align:middle;"></i> Updated: ${formatTimestamp(state.history[currentMonthStr].lastUpdated)}`;
     
+    // Render Rekapitulasi UI
+    const recapContainer = document.getElementById('recap-container');
+    recapContainer.innerHTML = '';
+    
+    if (Object.keys(recapData).length === 0) {
+      recapContainer.innerHTML = '<div style="grid-column: span 2; text-align: center; font-size: 13px; color: var(--txt-dim); padding: 10px;">Belum ada aset bulan ini.</div>';
+    } else {
+      for (const [unit, totalVal] of Object.entries(recapData)) {
+        if (totalVal > 0) {
+          recapContainer.innerHTML += `
+            <div class="recap-item">
+              <div class="recap-label"><i data-lucide="${ICONS[unit] || 'circle-dollar-sign'}" style="width:12px;height:12px;"></i> ${unit}</div>
+              <div class="recap-val">Rp ${Math.round(totalVal).toLocaleString('id-ID')}</div>
+            </div>
+          `;
+        }
+      }
+    }
+
     window.lucide.createIcons();
     renderTrendChart();
   };
@@ -660,16 +716,16 @@
             <div class="asset-item">
               <div class="asset-icon"><i data-lucide="${ICONS[a.unit] || 'circle-dollar-sign'}"></i></div>
               <div class="asset-info">
-                <input class="asset-name" type="text" value="${a.name}" placeholder="Nama Aset" data-gidx="${gIdx}" data-aidx="${aIdx}">
-              </div>
-              <div class="asset-val-group">
-                <div class="val-input-row">
-                  <input class="asset-amount" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}">
-                  <select class="asset-unit" data-gidx="${gIdx}" data-aidx="${aIdx}">
-                    ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
-                  </select>
+                <input class="asset-name" type="text" value="${a.name}" placeholder="Tulis Nama Aset..." data-gidx="${gIdx}" data-aidx="${aIdx}">
+                <div class="asset-val-group" style="align-items: flex-start;">
+                  <div class="val-input-row">
+                    <input class="asset-amount" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}" style="text-align: left; width: 120px;">
+                    <select class="asset-unit" data-gidx="${gIdx}" data-aidx="${aIdx}">
+                      ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="asset-equiv" id="equiv-${gIdx}-${aIdx}"></div>
                 </div>
-                <div class="asset-equiv" id="equiv-${gIdx}-${aIdx}"></div>
               </div>
               <button class="btn-del btn-del-asset" data-gidx="${gIdx}" data-aidx="${aIdx}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
             </div>
@@ -759,6 +815,13 @@
 
   renderUI();
   fetchLiveRates();
+</script>
+
+<script>
+  // Registrasi Service Worker untuk PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(err => console.log('PWA SW Gagal:', err));
+  }
 </script>
 </body>
 </html>

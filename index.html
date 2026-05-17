@@ -203,19 +203,15 @@
                     <div class="font-display text-[clamp(2.5rem,5vw,4rem)] font-bold tracking-tight mb-8 mask-data text-slate-900 dark:text-white break-words leading-tight" id="global-net-worth">Rp 0</div>
 
                     <div class="grid grid-cols-2 gap-4 mb-8 text-left">
-                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700">
-                            <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-400 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-success"></div> Total Aset
-                            </div>
-                            <div id="lbl-total-assets" class="font-display text-[clamp(1.1rem,2vw,1.5rem)] font-bold text-slate-900 dark:text-white mask-data truncate">Rp 0</div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700">
+                            <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Total Aset</div>
+                            <div class="font-display font-bold text-lg text-success mask-data" id="lbl-total-assets">Rp 0</div>
                         </div>
-                        <div class="bg-red-50 dark:bg-red-500/10 p-4 rounded-2xl border-2 border-red-200 dark:border-red-500/30">
-                            <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-red-500 mb-1">
-                                <div class="w-2 h-2 rounded-full bg-red-500"></div> Total Hutang
-                            </div>
+                        <div class="bg-red-50 dark:bg-red-500/10 p-4 rounded-2xl border-2 border-red-200 dark:border-red-500/30 relative">
+                            <div class="text-[10px] font-bold uppercase tracking-widest text-red-500 mb-1">Total Hutang</div>
                             <div class="flex items-center gap-1 border-b-2 border-dashed border-red-300 dark:border-red-500/50 pb-1">
-                                <span class="font-display font-bold text-red-500 text-[clamp(1.1rem,2vw,1.5rem)]">Rp</span>
-                                <input type="text" inputmode="numeric" id="input-debt" class="bg-transparent border-none outline-none font-display font-bold text-[clamp(1.1rem,2vw,1.5rem)] text-red-600 dark:text-red-400 w-full mask-data focus:ring-0 p-0" placeholder="0">
+                                <span class="font-display font-bold text-lg text-red-500">Rp</span>
+                                <input type="text" inputmode="numeric" id="input-debt" class="bg-transparent border-none outline-none font-display font-bold text-lg text-red-500 w-full mask-data focus:ring-0 p-0" placeholder="0">
                             </div>
                         </div>
                     </div>
@@ -234,36 +230,34 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
-                    <div class="minimal-card p-6">
-                        <h2 class="text-sm font-bold font-display flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
-                            <i data-lucide="heart-pulse" class="w-5 h-5 text-rose-500"></i> Kesehatan Keuangan
-                        </h2>
-                        
-                        <!-- Bar Rasio Hutang -->
-                        <div class="mb-6">
-                            <div class="flex justify-between items-end mb-2">
-                                <span class="text-[11px] uppercase font-bold tracking-widest text-slate-400">Rasio Hutang</span>
-                                <span class="font-display font-bold text-lg text-slate-900 dark:text-white" id="health-debt-txt">0%</span>
-                            </div>
-                            <div class="relative h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
-                                <!-- Indikator Batas Aman (30%) & Batas Bahaya (50%) -->
-                                <div class="absolute top-0 bottom-0 left-[30%] w-[2px] bg-slate-400/50 z-10" title="Batas Aman (30%)"></div>
-                                <div class="absolute top-0 bottom-0 left-[50%] w-[2px] bg-red-400/50 z-10" title="Batas Bahaya (50%)"></div>
-                                <div id="health-debt-bar" class="h-full bg-success transition-all duration-700 ease-out" style="width: 0%"></div>
-                            </div>
-                            <div class="text-[10px] font-semibold text-slate-400 mt-1.5 text-right" id="health-debt-status">Status: Aman</div>
+                <div class="minimal-card p-6">
+                    <h2 class="text-sm font-bold font-display flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
+                        <i data-lucide="heart-pulse" class="w-5 h-5 text-rose-500"></i> Kesehatan Keuangan
+                    </h2>
+                    
+                    <!-- Bar Rasio Hutang -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-[11px] uppercase font-bold tracking-widest text-slate-400">Rasio Hutang</span>
+                            <span class="font-display font-bold text-lg text-slate-900 dark:text-white" id="health-debt-txt">0%</span>
                         </div>
+                        <div class="relative h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <!-- Indikator Batas Aman (30%) & Batas Bahaya (50%) -->
+                            <div class="absolute top-0 bottom-0 left-[30%] w-[2px] bg-slate-400/50 z-10" title="Batas Aman (30%)"></div>
+                            <div class="absolute top-0 bottom-0 left-[50%] w-[2px] bg-red-400/50 z-10" title="Batas Bahaya (50%)"></div>
+                            <div id="health-debt-bar" class="h-full bg-success transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                        <div class="text-[10px] font-semibold text-slate-400 mt-1.5 text-right" id="health-debt-status">Status: Aman</div>
+                    </div>
 
-                        <!-- Bar Diversifikasi -->
-                        <div>
-                            <div class="flex justify-between items-end mb-2">
-                                <span class="text-[11px] uppercase font-bold tracking-widest text-slate-400">Diversifikasi</span>
-                                <span class="font-display font-bold text-lg text-slate-900 dark:text-white" id="health-div-txt">0 Kategori</span>
-                            </div>
-                            <div class="flex gap-1 h-3" id="health-div-steps">
-                                <!-- Blok-blok div dibuat via JS -->
-                            </div>
+                    <!-- Bar Diversifikasi -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="text-[11px] uppercase font-bold tracking-widest text-slate-400">Diversifikasi</span>
+                            <span class="font-display font-bold text-lg text-slate-900 dark:text-white" id="health-div-txt">0 Kategori</span>
+                        </div>
+                        <div class="flex gap-1 h-3" id="health-div-steps">
+                            <!-- Blok-blok div dibuat via JS -->
                         </div>
                     </div>
                 </div>
@@ -750,58 +744,97 @@
                     }).join('');
 
                 card.innerHTML = `
-                    <div class="p-5 sm:p-6 border-b-2 border-slate-100 dark:border-slate-800 cursor-pointer user-select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-t-[2rem]" onclick="window.toggleGoal(${gIdx})">
+                    <div class="goal-header-toggle p-5 sm:p-6 border-b-2 border-slate-100 dark:border-slate-800 cursor-pointer user-select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-t-[2rem]" data-g="${gIdx}">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                            <div class="flex-1 w-full" onclick="event.stopPropagation()">
+                            <div class="flex-1 w-full">
                                 <input type="text" class="goal-name w-full bg-transparent border-none outline-none font-display font-bold text-xl text-slate-900 dark:text-white placeholder-slate-300 focus:border-b-2 focus:border-accent" value="${goal.name}" placeholder="Nama Tujuan..." data-g="${gIdx}">
                             </div>
-                            <div class="flex items-center gap-3 w-full sm:w-auto" onclick="event.stopPropagation()">
+                            <div class="flex items-center gap-3 w-full sm:w-auto">
                                 <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 w-full sm:w-auto">
                                     <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Target:</span>
                                     <span class="font-display font-bold text-sm text-slate-900 dark:text-white">Rp</span>
                                     <input type="text" class="goal-target bg-transparent border-none outline-none font-display font-bold text-sm text-slate-900 dark:text-white w-24 text-right mask-data focus:ring-0 p-0" inputmode="numeric" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0" data-g="${gIdx}">
                                 </div>
-                                <button class="btn-collapse text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-transform"><i data-lucide="chevron-up" class="w-5 h-5 pointer-events-none"></i></button>
+                                <button class="btn-collapse text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-transform pointer-events-none"><i data-lucide="chevron-up" class="w-5 h-5 pointer-events-none"></i></button>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div id="prog-${gIdx}" class="h-full bg-accent rounded-full transition-all duration-500" style="width: 0%"></div>
-                            </div>
-                            <span id="pct-txt-${gIdx}" class="text-xs font-bold text-accent min-w-[35px] text-right">0%</span>
+                        <div class="relative h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <div id="prog-${gIdx}" class="h-full bg-gradient-to-r from-accent to-blue-600 transition-all duration-700 ease-out" style="width: 0%"></div>
                         </div>
-                        <div id="col-txt-${gIdx}" class="text-[11px] font-bold text-slate-400 mt-2 mask-data">Terkumpul: Rp 0</div>
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="text-xs font-bold text-slate-500" id="col-txt-${gIdx}">Terkumpul: Rp 0</div>
+                            <div class="text-[11px] font-bold bg-accent/10 text-accent px-2.5 py-1 rounded-lg" id="pct-txt-${gIdx}">0%</div>
+                        </div>
                     </div>
-                    
-                    <div class="goal-body bg-white dark:bg-slate-900 rounded-b-[2rem]">
-                        <div class="p-5 sm:p-6 flex flex-col gap-3">
-                            ${assetsHtml}
-                            <div class="flex justify-between items-center mt-2">
-                                <button class="btn-add-asset text-xs font-bold text-accent hover:text-sky-600 dark:hover:text-sky-400 flex items-center gap-1 transition-colors" data-g="${gIdx}"><i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset</button>
-                                <button class="btn-del-goal text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors" data-g="${gIdx}"><i data-lucide="trash-2" class="w-4 h-4"></i> Hapus Tabungan</button>
+                    <div class="goal-body p-5 sm:p-6 pt-2 bg-white dark:bg-slate-900 rounded-b-[2rem]">
+                        <div>
+                            <div class="flex justify-between items-center mb-4 mt-2">
+                                <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4"></i> Rincian Aset</div>
+                                <button class="btn-del-goal text-slate-400 hover:text-red-500 transition-colors p-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10" data-g="${gIdx}" title="Hapus Kantong"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                             </div>
+                            <div class="flex flex-col gap-3 mb-4">${assetsHtml}</div>
+                            <button class="btn-add-asset w-full py-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-accent hover:border-accent hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all font-bold text-sm flex justify-center items-center gap-2" data-g="${gIdx}">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Tambah Catatan Aset
+                            </button>
                         </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
 
-            /* Setup Event Listeners dalam Daftar */
-            document.querySelectorAll('.goal-name').forEach(el => el.addEventListener('blur', e => { goals[e.target.dataset.g].name = e.target.value; saveSilent(); }));
+            // Mengikat event listener input setelah DOM selesai dirender
+            document.querySelectorAll('.goal-name').forEach(el => el.addEventListener('blur', e => { goals[e.target.dataset.g].name = e.target.value; saveAndRender(); }));
             document.querySelectorAll('.goal-target').forEach(el => attachInput(el, (v) => { goals[el.dataset.g].target = v; }, 'TARGET'));
-            
-            document.querySelectorAll('.asset-name').forEach(el => el.addEventListener('blur', e => { goals[e.target.dataset.g].assets[e.target.dataset.a].name = e.target.value; saveSilent(); }));
+            document.querySelectorAll('.asset-name').forEach(el => el.addEventListener('blur', e => { goals[e.target.dataset.g].assets[e.target.dataset.a].name = e.target.value; saveAndRender(); }));
             document.querySelectorAll('.asset-unit').forEach(el => el.addEventListener('change', e => { goals[e.target.dataset.g].assets[e.target.dataset.a].unit = e.target.value; saveAndRender(); }));
-            document.querySelectorAll('.asset-amount').forEach(el => attachInput(el, (v) => { goals[el.dataset.g].assets[el.dataset.a].amount = v; }, el.dataset.u));
+            document.querySelectorAll('.asset-amount').forEach(el => attachInput(el, (v) => { goals[e.target.dataset.g].assets[e.target.dataset.a].amount = v; }, el.dataset.u));
 
-            document.querySelectorAll('.btn-add-asset').forEach(el => el.addEventListener('click', e => { goals[e.target.dataset.g].assets.push({ id: Date.now(), name: '', unit: 'IDR / Tabungan', amount: 0 }); saveAndRender(); }));
-            document.querySelectorAll('.btn-del-asset').forEach(el => el.addEventListener('click', e => { goals[e.currentTarget.dataset.g].assets.splice(e.currentTarget.dataset.a, 1); saveAndRender(); }));
-            
-            document.querySelectorAll('.btn-del-goal').forEach(el => el.addEventListener('click', e => {
-                showDialog('Hapus Kantong Tabungan', 'Apakah Anda yakin ingin menghapus kantong tabungan ini beserta seluruh catatan aset di dalamnya?', 'danger', () => {
-                    goals.splice(e.currentTarget.dataset.g, 1); saveAndRender();
+            document.querySelectorAll('.btn-add-asset').forEach(el => {
+                el.addEventListener('click', e => { 
+                    const gIdx = parseInt(e.currentTarget.dataset.g, 10);
+                    goals[gIdx].assets.push({ id: Date.now(), name: '', unit: 'IDR / Tabungan', amount: 0 }); 
+                    saveAndRender(); 
                 });
-            }));
+            });
+            
+            // Handle Toggle Card Collapse
+            document.querySelectorAll('.goal-header-toggle').forEach(el => {
+                el.addEventListener('click', e => {
+                    // Mencegah collapse jika sedang klik di dalam input text
+                    if(e.target.tagName === 'INPUT') return;
+                    
+                    const gIdx = parseInt(el.dataset.g, 10);
+                    goals[gIdx].collapsed = !goals[gIdx].collapsed;
+                    saveSilent();
+                    
+                    const card = document.getElementById(`gc-${gIdx}`);
+                    if (card) card.classList.toggle('is-collapsed', goals[gIdx].collapsed);
+                });
+            });
+
+            document.querySelectorAll('.btn-del-goal').forEach(el => {
+                el.addEventListener('click', e => {
+                    e.stopPropagation(); // Mencegah trigger ke fungsi lain
+                    const gIdx = parseInt(e.currentTarget.dataset.g, 10);
+                    showDialog('Hapus Kantong Tabungan', 'Apakah Anda yakin ingin menghapus kantong tabungan ini beserta seluruh catatan aset di dalamnya?', 'danger', () => {
+                        const currentGoals = state.history[currentMonthStr].goals;
+                        currentGoals.splice(gIdx, 1);
+                        saveAndRender();
+                    });
+                });
+            });
+
+            // Ensure dataset uses ints for splicing assets
+            document.querySelectorAll('.btn-del-asset').forEach(el => {
+                el.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const gIdx = parseInt(e.currentTarget.dataset.g, 10);
+                    const aIdx = parseInt(e.currentTarget.dataset.a, 10);
+                    const currentGoals = state.history[currentMonthStr].goals;
+                    currentGoals[gIdx].assets.splice(aIdx, 1);
+                    saveAndRender();
+                });
+            });
 
             window.lucide.createIcons();
             updateDynamicValues();

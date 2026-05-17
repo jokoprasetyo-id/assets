@@ -35,6 +35,11 @@
             font-family: 'Outfit', sans-serif;
             @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-500;
             overflow-x: hidden;
+            background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+        html.dark body {
+            background-image: radial-gradient(#334155 1.5px, transparent 1.5px);
         }
 
         /* Komponen Minimalis Tegas */
@@ -51,14 +56,11 @@
         }
 
         /* Sensor Privasi */
-        body.privacy-on .mask-data {
-            filter: blur(6px);
-            opacity: 0.7;
-            user-select: none;
-            pointer-events: none;
-            transition: all 0.3s ease;
+        body.privacy-on input.mask-data {
+            -webkit-text-security: disc;
+            color: #94a3b8;
+            letter-spacing: 2px;
         }
-        .mask-data { transition: all 0.3s ease; }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -69,10 +71,21 @@
         .goal-body {
             display: grid;
             grid-template-rows: 1fr;
-            transition: grid-template-rows 0.3s ease-in-out;
+            transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .goal-body > div { overflow: hidden; }
+        .goal-body > div { 
+            min-height: 0; /* FIX UNTUK MEMPERLANCAR EFEK COLLAPSE */
+            overflow: hidden; 
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out, transform 0.4s ease-in-out;
+            transform: translateY(0);
+        }
         .is-collapsed .goal-body { grid-template-rows: 0fr; }
+        .is-collapsed .goal-body > div {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
         .is-collapsed .btn-collapse { transform: rotate(180deg); }
     </style>
 </head>
@@ -91,91 +104,83 @@
         </div>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 z-[60] flex items-center justify-center hidden bg-slate-900/40 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-        <div id="settings-modal-panel" class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl transform scale-95 transition-all duration-300">
-            
-            <div class="flex justify-between items-center mb-6 border-b-2 border-slate-100 dark:border-slate-800 pb-4 sticky top-0 bg-white dark:bg-slate-900 z-10 pt-2">
-                <h2 class="font-display font-bold text-xl flex items-center gap-2 text-slate-900 dark:text-white">
+    <!-- Floating Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-[90] flex items-center justify-center hidden bg-slate-900/40 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div id="settings-modal-panel" class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 max-w-md w-full shadow-2xl transform scale-95 transition-all duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-6 border-b-2 border-slate-100 dark:border-slate-800 pb-4">
+                <h3 class="font-display font-bold text-xl text-slate-900 dark:text-white flex items-center gap-2">
                     <i data-lucide="sliders-horizontal" class="w-5 h-5 text-accent"></i> Pengaturan
-                </h2>
-                <button id="close-settings" class="p-2 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </h3>
+                <button id="close-settings" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-slate-100 dark:bg-slate-800 p-2 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pb-4">
-                <!-- Sync Akun -->
-                <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="cloud" class="w-4 h-4"></i> Cloud Sync
-                    </h3>
-                    <div id="user-logged-out">
-                        <button id="btn-login" class="w-full py-3.5 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-                            <i data-lucide="log-in" class="w-5 h-5"></i> Masuk dengan Akun Google
-                        </button>
-                        <p class="text-xs text-center text-slate-500 mt-3 font-medium">Data akan tersinkronisasi antar perangkat.</p>
-                    </div>
-                    <div id="user-logged-in" class="hidden flex items-center justify-between minimal-input">
-                        <div class="flex items-center gap-3">
-                            <img id="up-avatar" src="" class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-700">
-                            <div>
-                                <div id="up-name" class="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[120px]"></div>
-                                <div id="up-email" class="text-xs text-slate-500 font-medium truncate max-w-[120px]"></div>
-                            </div>
+            <!-- Cloud Sync -->
+            <div class="mb-6">
+                <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="cloud" class="w-4 h-4"></i> Cloud Sync
+                </div>
+                <div id="user-logged-out">
+                    <button id="btn-login" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 px-4 rounded-xl flex justify-center items-center gap-3 transition-colors">
+                        <i data-lucide="log-in" class="w-5 h-5 text-accent"></i> Masuk dengan Google
+                    </button>
+                    <p class="text-[10px] text-center text-slate-400 mt-2 font-medium">Simpan data aman di awan</p>
+                </div>
+                <div id="user-logged-in" class="hidden flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <img id="up-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-slate-700">
+                        <div>
+                            <div id="up-name" class="font-bold text-sm text-slate-900 dark:text-white"></div>
+                            <div id="up-email" class="text-[10px] text-slate-500"></div>
                         </div>
-                        <button id="up-logout" class="bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-xl font-bold text-xs hover:bg-red-200 transition-colors">Keluar</button>
                     </div>
+                    <button id="up-logout" class="bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-500/20 dark:hover:bg-red-500/30 dark:text-red-400 font-bold py-1.5 px-3 rounded-lg text-xs transition-colors">Keluar</button>
+                </div>
+            </div>
 
-                    <!-- Nilai Tukar Valas API -->
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 mt-8 flex items-center gap-2">
-                        <i data-lucide="globe" class="w-4 h-4"></i> Nilai Tukar Valas
-                    </h3>
-                    <div class="minimal-input py-4 flex flex-col gap-2">
-                        <div class="text-[11px] font-bold text-slate-500 mb-1">Status Live API:</div>
-                        <div id="live-fx-status" class="flex items-center gap-2">
-                            <i data-lucide="loader-2" class="w-5 h-5 text-accent animate-spin"></i>
-                            <span class="text-accent font-bold text-sm">Menyinkronkan...</span>
-                        </div>
+            <!-- Kurs Dinamis -->
+            <div class="mb-6">
+                <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4"></i> Live Exchange Rates
+                </div>
+                <div id="live-fx-status" class="bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col items-center justify-center min-h-[60px]">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="loader-2" class="w-4 h-4 text-accent animate-spin"></i>
+                        <span class="text-xs font-bold text-slate-500">Menyinkronkan...</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Kurs & Harga Manual -->
-                <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                        <i data-lucide="coins" class="w-4 h-4"></i> Nilai Dasar Emas (Per Gram/Keping)
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2">
-                            <label class="flex justify-between items-center text-[11px] font-bold text-slate-500 mb-2 pl-2">
-                                <span>Emas Antam</span>
-                                <a href="https://www.logammulia.com/id/sell/gold" target="_blank" class="text-accent hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i>Cek Harga Realtime</a>
-                            </label>
-                            <input type="text" inputmode="numeric" class="minimal-input" id="set-antam" placeholder="0">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="flex justify-between items-center text-[11px] font-bold text-slate-500 mb-2 pl-2">
-                                <span>Emas Galeri24</span>
-                                <a href="https://galeri24.co.id/harga-emas" target="_blank" class="text-accent hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i>Cek Harga Realtime</a>
-                            </label>
-                            <input type="text" inputmode="numeric" class="minimal-input" id="set-emas" placeholder="0">
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="flex justify-between items-center text-[11px] font-bold text-slate-500 mb-2 pl-2">
-                                <span>Dinar KR (Koin)</span>
-                                <a href="https://dinarkr.com/" target="_blank" class="text-accent hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3 h-3"></i>Cek Harga Realtime</a>
-                            </label>
-                            <input type="text" inputmode="numeric" class="minimal-input" id="set-dinar" placeholder="0">
-                        </div>
+            <!-- Pengaturan Harga Manual -->
+            <div>
+                <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="coins" class="w-4 h-4"></i> Harga Manual (Rp)
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 block mb-1">Emas Antam / gr <a href="https://www.logammulia.com/id/sell/gold" target="_blank" class="text-accent ml-1 hover:underline">Cek</a></label>
+                        <input type="text" inputmode="numeric" id="set-antam" class="minimal-input text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 block mb-1">Emas Galeri24 / gr <a href="https://galeri24.co.id/harga-emas" target="_blank" class="text-accent ml-1 hover:underline">Cek</a></label>
+                        <input type="text" inputmode="numeric" id="set-emas" class="minimal-input text-sm">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 block mb-1">Dinar KR <a href="https://dinarkr.com/" target="_blank" class="text-accent ml-1 hover:underline">Cek</a></label>
+                        <input type="text" inputmode="numeric" id="set-dinar" class="minimal-input text-sm">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <main class="w-full max-w-[1400px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 md:gap-8">
-        
-        <!-- Header Atas -->
-        <header class="flex justify-between items-center minimal-card p-4">
-            <div class="pl-2">
-                <h1 class="font-display font-bold text-2xl lg:text-3xl text-slate-900 dark:text-white tracking-tight">AsetGo</h1>
+    <div class="w-full max-w-[1440px] mx-auto lg:mt-6 lg:mb-6 relative">
+        <main class="w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6 md:gap-8">
+            
+            <!-- Header Atas -->
+            <header class="flex justify-between items-center minimal-card p-4">
+                <div class="pl-2">
                 <div class="flex items-center gap-2 mt-1">
                     <input type="month" id="month-filter" class="bg-slate-100 dark:bg-slate-800 border-none rounded-lg px-2 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 outline-none cursor-pointer">
                     <span class="text-[10px] font-semibold text-slate-400" id="last-updated-lbl">Updated: -</span>
@@ -195,22 +200,22 @@
                 <!-- Kartu Ringkasan Kekayaan -->
                 <div class="minimal-card p-6 md:p-8 text-center bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-900/50">
                     <div class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Kekayaan Bersih</div>
-                    <div class="font-display text-4xl md:text-5xl font-bold tracking-tight mb-8 mask-data text-slate-900 dark:text-white" id="global-net-worth">Rp 0</div>
+                    <div class="font-display text-[clamp(2.5rem,5vw,4rem)] font-bold tracking-tight mb-8 mask-data text-slate-900 dark:text-white break-words leading-tight" id="global-net-worth">Rp 0</div>
 
                     <div class="grid grid-cols-2 gap-4 mb-8 text-left">
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700">
                             <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-400 mb-1">
                                 <div class="w-2 h-2 rounded-full bg-success"></div> Total Aset
                             </div>
-                            <div id="lbl-total-assets" class="font-display text-lg font-bold text-slate-900 dark:text-white mask-data">Rp 0</div>
+                            <div id="lbl-total-assets" class="font-display text-[clamp(1.1rem,2vw,1.5rem)] font-bold text-slate-900 dark:text-white mask-data truncate">Rp 0</div>
                         </div>
                         <div class="bg-red-50 dark:bg-red-500/10 p-4 rounded-2xl border-2 border-red-200 dark:border-red-500/30">
                             <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-red-500 mb-1">
                                 <div class="w-2 h-2 rounded-full bg-red-500"></div> Total Hutang
                             </div>
                             <div class="flex items-center gap-1 border-b-2 border-dashed border-red-300 dark:border-red-500/50 pb-1">
-                                <span class="font-display font-bold text-red-500">Rp</span>
-                                <input type="text" inputmode="numeric" id="input-debt" class="bg-transparent border-none outline-none font-display font-bold text-lg text-red-600 dark:text-red-400 w-full mask-data focus:ring-0 p-0" placeholder="0">
+                                <span class="font-display font-bold text-red-500 text-[clamp(1.1rem,2vw,1.5rem)]">Rp</span>
+                                <input type="text" inputmode="numeric" id="input-debt" class="bg-transparent border-none outline-none font-display font-bold text-[clamp(1.1rem,2vw,1.5rem)] text-red-600 dark:text-red-400 w-full mask-data focus:ring-0 p-0" placeholder="0">
                             </div>
                         </div>
                     </div>
@@ -282,6 +287,7 @@
 
         </div>
     </main>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -359,15 +365,15 @@
         let currentUser = null;
         let syncListener = null;
 
-        // Mendukung USD dan SGD via Live API
+        // Mendukung multi-valas via Live API
         let EXCHANGE_RATES = {
             'IDR / Tabungan': 1, 'Saham (IDR)': 1, 'Reksadana (IDR)': 1, 'Obligasi (IDR)': 1,
-            'Kripto (IDR)': 1, 'Properti (IDR)': 1, 'USD': 15000, 'SGD': 11800,
+            'Kripto (IDR)': 1, 'Properti (IDR)': 1, 'USD': 15000, 'SGD': 11800, 'EUR': 16500, 'AUD': 10500, 'JPY': 105,
             'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000
         };
 
         const UNITS = Object.keys(EXCHANGE_RATES);
-        const ICONS = { 'IDR / Tabungan': 'landmark', 'Saham (IDR)': 'trending-up', 'Reksadana (IDR)': 'pie-chart', 'Obligasi (IDR)': 'scroll-text', 'Kripto (IDR)': 'bitcoin', 'Properti (IDR)': 'home', 'USD': 'dollar-sign', 'SGD': 'banknote', 'Emas Antam (g)': 'coins', 'Emas G24 (g)': 'coins', 'Dinar KR': 'circle-dot' };
+        const ICONS = { 'IDR / Tabungan': 'landmark', 'Saham (IDR)': 'trending-up', 'Reksadana (IDR)': 'pie-chart', 'Obligasi (IDR)': 'scroll-text', 'Kripto (IDR)': 'bitcoin', 'Properti (IDR)': 'home', 'USD': 'dollar-sign', 'SGD': 'banknote', 'EUR': 'euro', 'AUD': 'circle-dollar-sign', 'JPY': 'japanese-yen', 'Emas Antam (g)': 'coins', 'Emas G24 (g)': 'coins', 'Dinar KR': 'circle-dot' };
 
         const getTodayMonthStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
         const formatMonthLabel = (yyyy_mm) => {
@@ -457,21 +463,49 @@
                 const data = await res.json();
                 
                 const idrRate = data.rates.IDR; // 1 USD = xxx IDR
-                const sgdRate = idrRate / data.rates.SGD; // 1 SGD = (1 USD in IDR) / (1 USD in SGD)
                 
                 EXCHANGE_RATES['USD'] = idrRate;
-                EXCHANGE_RATES['SGD'] = sgdRate;
+                EXCHANGE_RATES['SGD'] = idrRate / data.rates.SGD;
+                EXCHANGE_RATES['EUR'] = idrRate / data.rates.EUR;
+                EXCHANGE_RATES['AUD'] = idrRate / data.rates.AUD;
+                EXCHANGE_RATES['JPY'] = idrRate / data.rates.JPY;
 
                 statusEl.innerHTML = `
-                    <i data-lucide="check-circle-2" class="w-5 h-5 text-success"></i> 
-                    <span class="text-success font-bold text-[13px] tracking-tight">USD: Rp ${Math.round(idrRate).toLocaleString('id-ID')} &bull; SGD: Rp ${Math.round(sgdRate).toLocaleString('id-ID')}</span>
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-success"></i> 
+                        <span class="text-success font-bold text-[13px] tracking-tight">Tersinkronisasi (Live)</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 w-full">
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center shadow-sm">
+                            <div class="text-[10px] font-bold text-slate-400">USD</div>
+                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200">Rp ${Math.round(EXCHANGE_RATES['USD']).toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center shadow-sm">
+                            <div class="text-[10px] font-bold text-slate-400">SGD</div>
+                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200">Rp ${Math.round(EXCHANGE_RATES['SGD']).toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center shadow-sm">
+                            <div class="text-[10px] font-bold text-slate-400">EUR</div>
+                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200">Rp ${Math.round(EXCHANGE_RATES['EUR']).toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center shadow-sm">
+                            <div class="text-[10px] font-bold text-slate-400">AUD</div>
+                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200">Rp ${Math.round(EXCHANGE_RATES['AUD']).toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center shadow-sm">
+                            <div class="text-[10px] font-bold text-slate-400">JPY</div>
+                            <div class="text-[11px] font-bold text-slate-800 dark:text-slate-200">Rp ${Math.round(EXCHANGE_RATES['JPY']).toLocaleString('id-ID')}</div>
+                        </div>
+                    </div>
                 `;
                 window.lucide.createIcons();
                 updateDynamicValues();
             } catch (err) {
                 statusEl.innerHTML = `
-                    <i data-lucide="wifi-off" class="w-5 h-5 text-slate-400"></i> 
-                    <span class="text-slate-500 font-medium text-sm">Gagal mengambil data Live API (Offline)</span>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="wifi-off" class="w-5 h-5 text-slate-400"></i> 
+                        <span class="text-slate-500 font-medium text-sm">Gagal mengambil data Live API (Offline)</span>
+                    </div>
                 `;
                 window.lucide.createIcons();
             }
@@ -504,6 +538,7 @@
             document.body.classList.toggle('privacy-on', state.privacy);
             document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
             window.lucide.createIcons(); saveSilent();
+            updateDynamicValues(); // Force update teks bintang
         });
 
         // Toggle Floating Settings Modal
@@ -588,6 +623,9 @@
         };
 
         const updateDynamicValues = () => {
+            const formatRp = (val) => state.privacy ? 'Rp *******' : `Rp ${Math.round(val).toLocaleString('id-ID')}`;
+            const formatEq = (val) => state.privacy ? '≈ Rp *******' : `≈ Rp ${Math.round(val).toLocaleString('id-ID')}`;
+
             let totalAssets = 0;
             let diversData = {};
             const goals = state.history[currentMonthStr].goals;
@@ -602,7 +640,7 @@
                     diversData[a.unit] += idrVal;
 
                     const eq = document.getElementById(`equiv-${gIdx}-${aIdx}`);
-                    if(eq) eq.textContent = a.unit.includes('IDR') ? '' : `≈ Rp ${Math.round(idrVal).toLocaleString('id-ID')}`;
+                    if(eq) eq.textContent = a.unit.includes('IDR') ? '' : formatEq(idrVal);
                 });
                 totalAssets += goalTotal;
 
@@ -615,7 +653,7 @@
                 const coll = document.getElementById(`col-txt-${gIdx}`);
                 if(pb) pb.style.width = `${pct}%`;
                 if(pt) pt.textContent = `${Math.round(pct)}%`;
-                if(coll) coll.textContent = `Terkumpul: Rp ${Math.round(goalTotal).toLocaleString('id-ID')}`;
+                if(coll) coll.textContent = `Terkumpul: ${formatRp(goalTotal)}`;
             });
 
             const debt = state.history[currentMonthStr].debt || 0;
@@ -623,10 +661,10 @@
             state.history[currentMonthStr].netWorth = netWorth;
             state.history[currentMonthStr].totalAssets = totalAssets;
 
-            document.getElementById('lbl-total-assets').textContent = `Rp ${Math.round(totalAssets).toLocaleString('id-ID')}`;
+            document.getElementById('lbl-total-assets').textContent = formatRp(totalAssets);
             const nwEl = document.getElementById('global-net-worth');
-            nwEl.textContent = `Rp ${Math.round(netWorth).toLocaleString('id-ID')}`;
-            nwEl.className = `font-display text-4xl md:text-5xl font-bold tracking-tight mb-8 mask-data ${netWorth < 0 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`;
+            nwEl.textContent = formatRp(netWorth);
+            nwEl.className = `font-display text-[clamp(2.5rem,5vw,4rem)] font-bold tracking-tight mb-8 mask-data break-words leading-tight ${netWorth < 0 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`;
             
             const debtIn = document.getElementById('input-debt');
             if(document.activeElement !== debtIn) debtIn.value = debt === 0 ? '' : debt.toLocaleString('id-ID');
@@ -712,7 +750,7 @@
                     }).join('');
 
                 card.innerHTML = `
-                    <div class="p-5 sm:p-6 border-b-2 border-slate-100 dark:border-slate-800 cursor-pointer user-select-none" onclick="window.toggleGoal(${gIdx})">
+                    <div class="p-5 sm:p-6 border-b-2 border-slate-100 dark:border-slate-800 cursor-pointer user-select-none hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors rounded-t-[2rem]" onclick="window.toggleGoal(${gIdx})">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                             <div class="flex-1 w-full" onclick="event.stopPropagation()">
                                 <input type="text" class="goal-name w-full bg-transparent border-none outline-none font-display font-bold text-xl text-slate-900 dark:text-white placeholder-slate-300 focus:border-b-2 focus:border-accent" value="${goal.name}" placeholder="Nama Tujuan..." data-g="${gIdx}">

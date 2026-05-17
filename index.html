@@ -1,901 +1,991 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AsetGo</title>
-  <!-- Hubungkan ke Manifest di bagian <head> -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AsetGo</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Libraries -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            bg: '#0f172a',
+                            card: 'rgba(30, 41, 59, 0.7)',
+                            border: 'rgba(255, 255, 255, 0.1)',
+                            input: 'rgba(15, 23, 42, 0.6)',
+                            text: '#f8fafc',
+                            muted: '#94a3b8'
+                        },
+                        light: {
+                            bg: '#f8fafc',
+                            card: 'rgba(255, 255, 255, 0.9)',
+                            border: 'rgba(0, 0, 0, 0.1)',
+                            input: 'rgba(255, 255, 255, 0.8)',
+                            text: '#0f172a',
+                            muted: '#64748b'
+                        },
+                        accent: '#38bdf8',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
 
-<link rel="manifest" href="manifest.json">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f172a; --card-bg: rgba(255, 255, 255, 0.03); --card-border: rgba(255, 255, 255, 0.08);
-    --card-highlight: rgba(255, 255, 255, 0.15); --txt-main: #f8fafc; --txt-dim: #94a3b8;
-    --accent: #38bdf8; --accent-glow: rgba(56, 189, 248, 0.5); --success: #34d399; --warning: #fbbf24;
-    --input-bg: rgba(0, 0, 0, 0.2); --item-bg: rgba(255, 255, 255, 0.02); --track-bg: rgba(0, 0, 0, 0.3);
-    --danger-bg: rgba(239, 68, 68, 0.1); --danger-border: rgba(239, 68, 68, 0.2); --danger-txt: #ef4444;
-    --blob-opacity: 0.5;
-  }
-  body.light {
-    --bg: #f1f5f9; --card-bg: rgba(255, 255, 255, 0.6); --card-border: rgba(255, 255, 255, 1);
-    --card-highlight: rgba(255, 255, 255, 0.9); --txt-main: #0f172a; --txt-dim: #64748b;
-    --accent: #0284c7; --accent-glow: rgba(2, 132, 199, 0.3); --success: #059669; --warning: #d97706;
-    --input-bg: rgba(255, 255, 255, 0.7); --item-bg: rgba(255, 255, 255, 0.5); --track-bg: rgba(0, 0, 0, 0.08);
-    --danger-bg: rgba(239, 68, 68, 0.15); --danger-border: rgba(239, 68, 68, 0.3); --danger-txt: #dc2626;
-    --blob-opacity: 0.8;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Outfit', sans-serif; background-color: var(--bg); color: var(--txt-main);
-    min-height: 100vh; overflow-x: hidden; position: relative; padding: 2rem 1rem 6rem;
-    display: flex; justify-content: center; transition: background-color 0.4s ease, color 0.4s ease;
-  }
-  .blob {
-    position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: var(--blob-opacity);
-    animation: float 15s infinite alternate ease-in-out; transition: opacity 0.4s ease;
-  }
-  .blob-1 { background: #3b82f6; width: 40vw; height: 40vw; top: -10%; left: -10%; }
-  .blob-2 { background: #8b5cf6; width: 35vw; height: 35vw; bottom: -10%; right: -5%; animation-delay: -5s; }
-  .blob-3 { background: #0ea5e9; width: 30vw; height: 30vw; top: 40%; left: 30%; animation-delay: -10s; mix-blend-mode: screen; }
-  @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 30px) scale(1.1); } }
-  
-  .app-container { width: 100%; max-width: 600px; z-index: 1; }
-  .top-bar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-  header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1.2; }
-  .filter-group { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-  .month-picker { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-main); padding: 6px 12px; border-radius: 8px; font-family: 'Space Grotesk'; font-size: 14px; font-weight: 600; outline: none; cursor: pointer; transition: 0.3s; }
-  .last-updated { font-size: 11px; color: var(--txt-dim); }
-  .top-actions { display: flex; gap: 8px; }
-  .btn-icon { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-main); width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(10px); transition: all 0.3s; }
-  
-  .glass-card { background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--card-border); border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
-  .hero-card { text-align: center; padding: 32px 24px; }
-  .hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 8px; }
-  .hero-val { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; letter-spacing: -1px; }
-  
-  /* RECAP & HEALTH SECTION */
-  .recap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-  .recap-item { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; transition: all 0.3s; }
-  .recap-item:hover { border-color: var(--accent); background: var(--card-highlight); }
-  .recap-label { font-size: 11px; color: var(--txt-dim); text-transform: uppercase; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-  .recap-val { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--txt-main); }
-  
-  .health-badge { display: inline-flex; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; font-family: 'Space Grotesk'; text-transform: uppercase; margin-top: 6px; align-self: flex-start;}
-  .hb-good { background: rgba(52, 211, 153, 0.2); color: var(--success); border: 1px solid rgba(52, 211, 153, 0.3); }
-  .hb-warn { background: rgba(251, 191, 36, 0.2); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
-  .hb-bad { background: rgba(239, 68, 68, 0.2); color: var(--danger-txt); border: 1px solid rgba(239, 68, 68, 0.3); }
+    <style>
+        body {
+            @apply transition-colors duration-500 min-h-screen overflow-x-hidden pb-24;
+            background-color: theme('colors.light.bg');
+            color: theme('colors.light.text');
+        }
+        .dark body {
+            background-color: theme('colors.dark.bg');
+            color: theme('colors.dark.text');
+        }
 
-  /* PRIVACY MODE STYLES */
-  body.privacy-on .mask-data { 
-    filter: blur(6px); 
-    opacity: 0.8;
-    user-select: none; 
-    pointer-events: none; 
-    transition: filter 0.3s ease, opacity 0.3s ease;
-  }
-  .mask-data { transition: filter 0.3s ease, opacity 0.3s ease; }
+        /* Abstract Blobs Background */
+        .blob {
+            position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6;
+            animation: float 15s infinite alternate ease-in-out;
+        }
+        .dark .blob { opacity: 0.3; }
+        .blob-1 { background: #38bdf8; width: 40vw; height: 40vw; top: -10%; left: -10%; }
+        .blob-2 { background: #818cf8; width: 35vw; height: 35vw; bottom: -10%; right: -5%; animation-delay: -5s; }
 
-  #settings-panel { display: none; border-color: var(--accent); box-shadow: 0 0 20px var(--accent-glow); animation: slideDown 0.3s ease; }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-  .link-cek { color: var(--accent); text-decoration: none; font-size: 10px; font-weight: 700; background: rgba(56,189,248,0.1); padding: 2px 6px; border-radius: 100px; margin-left: 6px; display: inline-flex; align-items: center; gap: 2px; }
-  .goal-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-  .goal-title-input { background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--txt-main); font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; width: 100%; outline: none; transition: 0.3s; padding-bottom: 4px; }
-  .btn-collapse { background: transparent; border: none; color: var(--txt-dim); width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.3s ease; }
-  .progress-wrapper { position: relative; margin-top: 10px; margin-bottom: 24px;}
-  .progress-glass { height: 12px; background: var(--track-bg); border-radius: 100px; border: 1px solid var(--card-border); overflow: hidden; position: relative; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #38bdf8); border-radius: 100px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--accent-glow); position: relative; overflow: hidden; }
-  .mini-summary { display: none; margin-top: 8px; }
-  .is-collapsed .mini-summary { display: block; }
-  .mini-stat { font-size: 12px; font-weight: 600; color: var(--success); font-family: 'Space Grotesk', sans-serif; margin-bottom: 6px; }
-  .progress-mini { height: 4px; background: var(--track-bg); border-radius: 4px; overflow: hidden; }
-  .card-body { transition: max-height 0.4s ease, opacity 0.4s ease; overflow: hidden; margin-top: 16px; }
-  .is-collapsed .card-body { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
-  .is-collapsed .btn-collapse { transform: rotate(-180deg); }
-  .is-collapsed { padding-bottom: 20px; }
-  .progress-stats { display: flex; justify-content: space-between; margin-top: 10px; font-family: 'Space Grotesk', sans-serif; }
-  .stat-val { font-size: 16px; font-weight: 700; color: var(--txt-main); }
-  .stat-val.success { color: var(--success); }
-  .stat-label { font-size: 10px; color: var(--txt-dim); text-transform: uppercase; letter-spacing: 0.5px; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; align-items: end; }
-  .input-label { display: block; font-size: 12px; color: var(--txt-dim); margin-bottom: 8px; font-weight: 500; }
-  .input-glass { width: 100%; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 16px; color: var(--txt-main); font-family: inherit; font-size: 15px; outline: none; transition: all 0.3s; }
-  
-  .asset-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-  .asset-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--item-bg); border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 8px; transition: background 0.3s; }
-  .asset-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; justify-content: center; align-items: center; color: var(--accent); flex-shrink: 0; }
-  .asset-info { flex: 1; min-width: 0; }
-  
-  .asset-name { font-size: 14px; font-weight: 600; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 12px; color: var(--txt-main); width: 100%; outline: none; margin-bottom: 4px; transition: all 0.3s; }
-  .asset-name:focus { border-color: var(--accent); background: var(--card-highlight); }
-  
-  .asset-val-group { display: flex; flex-direction: column; align-items: flex-end; }
-  .val-input-row { display: flex; align-items: center; gap: 4px; }
-  .asset-amount { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--success); background: transparent; border: none; outline: none; text-align: right; width: 85px; }
-  .asset-unit { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--txt-dim); font-size: 11px; font-family: inherit; border-radius: 6px; padding: 4px; outline: none; cursor: pointer; max-width: 105px; }
-  .asset-unit option { background: var(--bg); color: var(--txt-main); }
-  .asset-equiv { font-size: 10.5px; color: var(--txt-dim); margin-top: 4px; font-family: 'Space Grotesk', sans-serif; }
-  .btn-del { background: var(--danger-bg); color: var(--danger-txt); border: 1px solid var(--danger-border); width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-  .btn-del-goal { width: 32px; height: 32px; background: transparent; border-color: transparent; color: var(--txt-dim); }
-  .btn-add-asset { width: 100%; padding: 12px; border-radius: 12px; margin-top: 4px; background: transparent; border: 1px dashed var(--card-border); color: var(--txt-dim); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.3s; }
-  .btn-add-goal { width: 100%; padding: 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--accent); font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .pct-badge { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: var(--accent); padding: 6px 12px; border-radius: 100px; font-size: 13px; font-weight: 600; font-family: 'Space Grotesk'; white-space: nowrap; }
-  .chart-section { display: flex; align-items: center; gap: 16px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border); }
-  .donut-chart { width: 70px; height: 70px; border-radius: 50%; background: var(--track-bg); position: relative; flex-shrink: 0; transition: background 0.4s; }
-  .donut-chart::before { content: ''; position: absolute; inset: 12px; background: var(--card-bg); border-radius: 50%; }
-  .chart-legend { flex: 1; font-size: 11.5px; color: var(--txt-dim); display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .debt-input-container:focus-within { border-bottom: 1px solid var(--danger-txt); }
-</style>
+        @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 30px) scale(1.1); } }
+
+        /* Glass Cards */
+        .glass {
+            @apply backdrop-blur-xl border transition-all duration-300 rounded-3xl shadow-lg;
+            background-color: theme('colors.light.card');
+            border-color: theme('colors.light.border');
+        }
+        .dark .glass {
+            background-color: theme('colors.dark.card');
+            border-color: theme('colors.dark.border');
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Inputs */
+        .glass-input {
+            @apply w-full rounded-xl px-4 py-2.5 outline-none transition-all duration-300 font-sans text-sm;
+            background-color: theme('colors.light.input');
+            border: 1px solid theme('colors.light.border');
+            color: theme('colors.light.text');
+        }
+        .glass-input:focus { @apply border-accent ring-1 ring-accent/50; }
+        .dark .glass-input {
+            background-color: theme('colors.dark.input');
+            border-color: theme('colors.dark.border');
+            color: theme('colors.dark.text');
+        }
+
+        /* Privacy Mode */
+        body.privacy-on .mask-data { 
+            filter: blur(8px); opacity: 0.7; user-select: none; pointer-events: none; transition: all 0.3s ease; 
+        }
+        .mask-data { transition: all 0.3s ease; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { @apply bg-slate-300 dark:bg-slate-700 rounded-full; }
+
+        /* Goal Collapse Animation */
+        .goal-body { transition: max-height 0.4s ease-in-out, opacity 0.3s ease, margin 0.3s ease; overflow: hidden; }
+        .is-collapsed .goal-body { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
+        .is-collapsed .collapse-icon { transform: rotate(-180deg); }
+        
+        /* Modal Settings */
+        #settings-panel { display: none; }
+        #settings-panel.active { display: block; animation: slideDown 0.3s ease-out forwards; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="light">
+<body class="antialiased">
 
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
-<div class="blob blob-3"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
 
-<div class="app-container">
-  <div class="top-bar">
-    <header>
-      <h1>AsetGo</h1>
-      <div class="filter-group">
-        <input type="month" id="month-filter" class="month-picker">
-        <div class="last-updated" id="last-updated-lbl">Updated: -</div>
-      </div>
-    </header>
-    <div class="top-actions">
-      <!-- Tombol Mode Privasi -->
-      <button class="btn-icon" id="btn-privacy" title="Mode Privasi (Sensor Nilai)">
-        <i data-lucide="eye"></i>
-      </button>
-      <button class="btn-icon" id="btn-settings" title="Pengaturan">
-        <i data-lucide="settings"></i>
-      </button>
-      <button class="btn-icon" id="btn-theme" title="Ganti Tema">
-        <i data-lucide="moon" id="theme-icon"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Settings Panel -->
-  <div id="settings-panel" class="glass-card">
-    <div class="goal-header" style="margin-bottom: 20px;">
-      <div style="font-size: 16px; font-weight: 700; color: var(--txt-main); display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i> Pengaturan
-      </div>
-      <button class="btn-collapse" id="close-settings"><i data-lucide="x"></i></button>
-    </div>
-
-    <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border);">
-      <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-        <i data-lucide="cloud-upload" style="width: 14px; height: 14px;"></i> Cloud Sync
-      </div>
-      <div id="user-logged-out">
-        <button id="btn-login" style="width: 100%; padding: 12px; border-radius: 12px; background: var(--accent); color: white; border: none; font-size: 14px; font-family: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s;">
-          <i data-lucide="log-in" style="width: 16px; height: 16px;"></i> Masuk dengan Google
-        </button>
-        <div style="font-size: 11px; text-align: center; color: var(--txt-dim); margin-top: 8px;">Simpan dan sinkronkan datamu secara realtime.</div>
-      </div>
-      <div id="user-logged-in" style="display: none; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--card-border);">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <img id="up-avatar" src="" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--card-border);">
-          <div>
-            <div id="up-name" style="font-size: 14px; font-weight: 600; color: var(--txt-main);"></div>
-            <div id="up-email" style="font-size: 11px; color: var(--txt-dim);"></div>
-          </div>
-        </div>
-        <button id="up-logout" style="background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-txt); border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; transition: 0.3s;">
-          Keluar
-        </button>
-      </div>
-    </div>
-
-    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-dim); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-        <i data-lucide="coins" style="width: 14px; height: 14px;"></i> Harga & Nilai Tukar
-    </div>
-    <div style="margin-bottom: 16px;">
-      <label class="input-label">Kurs SGD ke Rupiah (Auto Sync API)</label>
-      <div id="live-sgd-status" style="font-family: 'Space Grotesk'; font-size: 15px; color: var(--success); display: flex; align-items: center; gap: 6px; background: var(--input-bg); padding: 12px 16px; border-radius: 12px; border: 1px solid var(--card-border);">
-        <i data-lucide="loader-2" class="lucide-spin" style="width: 16px; height: 16px;"></i> Menyinkronkan...
-      </div>
-    </div>
-    <div class="grid-2" style="margin-bottom: 16px;">
-      <div>
-        <label class="input-label">Emas Antam / Gram <a href="https://www.logammulia.com/id/sell/gold" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
-        <input type="text" inputmode="numeric" class="input-glass" id="set-antam" placeholder="0">
-      </div>
-      <div>
-        <label class="input-label">Emas Galeri24 / Gram <a href="https://galeri24.co.id/harga-emas" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
-        <input type="text" inputmode="numeric" class="input-glass" id="set-emas" placeholder="0">
-      </div>
-    </div>
-    <div class="grid-2" style="margin-bottom: 0;">
-      <div>
-        <label class="input-label">Dinar KR <a href="https://dinarkr.com/" target="_blank" class="link-cek"><i data-lucide="external-link" style="width:10px; height:10px;"></i>Cek</a></label>
-        <input type="text" inputmode="numeric" class="input-glass" id="set-dinar" placeholder="0">
-      </div>
-    </div>
-  </div>
-
-  <!-- Global Dashboard & Chart -->
-  <div class="glass-card hero-card" style="padding-bottom: 24px;">
-    <div class="hero-lbl">Kekayaan Bersih (<span id="lbl-current-month"></span>)</div>
-    <div class="hero-val mask-data" id="global-net-worth" style="margin-bottom: 16px;">Rp 0</div>
-    
-    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-      <div style="flex: 1; background: rgba(56, 189, 248, 0.05); border: 1px solid var(--card-border); padding: 12px; border-radius: 16px;">
-        <div style="font-size: 11px; font-weight: 600; color: var(--txt-dim); text-transform: uppercase; margin-bottom: 4px;">Total Aset</div>
-        <div id="lbl-total-assets" class="mask-data" style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--success);">Rp 0</div>
-      </div>
-      <div style="flex: 1; background: var(--danger-bg); border: 1px solid var(--danger-border); padding: 12px; border-radius: 16px;">
-        <div style="font-size: 11px; font-weight: 600; color: var(--danger-txt); text-transform: uppercase; margin-bottom: 4px;">Total Hutang</div>
-        <div class="debt-input-container" style="display: flex; align-items: center; justify-content: center; gap: 4px; border-bottom: 1px dashed var(--danger-txt); padding-bottom: 2px;">
-          <span style="font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; color: var(--danger-txt);">Rp</span>
-          <input type="text" inputmode="numeric" id="input-debt" class="mask-data" value="" placeholder="0" style="background: transparent; border: none; color: var(--danger-txt); font-family: 'Space Grotesk'; font-size: 16px; font-weight: 700; width: 100px; outline: none;">
-        </div>
-      </div>
-    </div>
-
-    <div style="height: 140px; width: 100%; position: relative;">
-      <canvas id="trendChart"></canvas>
-    </div>
-  </div>
-
-  <!-- REKAPITULASI & HEALTH SCORE -->
-  <div class="glass-card" style="padding: 20px;">
-    <div class="asset-section-title" style="margin-bottom: 4px;"><i data-lucide="pie-chart" style="width:16px; height:16px;"></i> Rekapitulasi Aset</div>
-    <div style="font-size: 11px; color: var(--txt-dim); margin-bottom: 12px;">Total nilai berdasarkan tipe instrumen bulan ini.</div>
-    <div class="recap-grid" id="recap-container" style="margin-bottom: 20px;">
-      <!-- Item rekap dimuat lewat JS -->
-    </div>
-    
-    <div class="asset-section-title" style="margin-bottom: 4px; padding-top: 16px; border-top: 1px dashed var(--card-border);"><i data-lucide="activity" style="width:16px; height:16px;"></i> Skor Kesehatan Keuangan</div>
-    <div class="recap-grid" id="health-container">
-      <!-- Item skor kesehatan dimuat lewat JS -->
-    </div>
-  </div>
-
-  <div id="goals-container"></div>
-  <button id="btn-add-goal" class="btn-add-goal"><i data-lucide="folder-plus"></i> Tambah Tujuan Tabungan</button>
-</div>
-
-<!-- MODULE SCRIPT UNTUK FIREBASE & LOGIC -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  const FB = {
-    apiKey: "AIzaSyDKUSL_DSRjORdxpLsahxLamOluOLIQss8",
-    authDomain: "assets-liquid.firebaseapp.com",
-    projectId: "assets-liquid",
-    storageBucket: "assets-liquid.firebasestorage.app",
-    messagingSenderId: "573395404798",
-    appId: "1:573395404798:web:b3f5c70f1d05500d6d62af"
-  };
-  
-  const fbApp = initializeApp(FB);
-  const auth = getAuth(fbApp);
-  const db = getFirestore(fbApp);
-  const provider = new GoogleAuthProvider();
-
-  let currentUser = null;
-  let syncListener = null;
-
-  let EXCHANGE_RATES = {
-    'IDR / Tabungan': 1, 'Saham (IDR)': 1, 'Reksadana (IDR)': 1, 'Obligasi (IDR)': 1,
-    'Kripto (IDR)': 1, 'Properti (IDR)': 1, 'SGD': 11800,
-    'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000
-  };
-
-  const UNITS = Object.keys(EXCHANGE_RATES);
-  const ICONS = { 'IDR / Tabungan': 'landmark', 'Saham (IDR)': 'trending-up', 'Reksadana (IDR)': 'pie-chart', 'Obligasi (IDR)': 'scroll-text', 'Kripto (IDR)': 'bitcoin', 'Properti (IDR)': 'home', 'SGD': 'banknote', 'Emas Antam (g)': 'coins', 'Emas G24 (g)': 'coins', 'Dinar KR': 'circle-dot' };
-  const CHART_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#a78bfa', '#f472b6', '#fb923c', '#e879f9'];
-
-  const getTodayMonthStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  };
-
-  const formatTimestamp = (ts) => {
-    if(!ts) return '-';
-    const d = new Date(ts);
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  };
-
-  const formatMonthLabel = (yyyy_mm) => {
-    const [y, m] = yyyy_mm.split('-');
-    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-    return `${months[parseInt(m)-1]} ${y}`;
-  };
-
-  let currentMonthStr = getTodayMonthStr();
-  let trendChartInstance = null;
-
-  let state = {
-    theme: 'light',
-    privacy: false, // State Privasi Default
-    rates: { 'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000 },
-    history: {} 
-  };
-
-  const defaultGoals = [
-    { id: 1, name: 'Dana Darurat', target: 50000000, collapsed: false, assets: [{ id: 101, name: 'Kas Rekening', unit: 'IDR / Tabungan', amount: 12500000 }, { id: 102, name: 'Emas Batangan', unit: 'Emas Antam (g)', amount: 5 }] }
-  ];
-
-  const loadLocalData = () => {
-    const saved = localStorage.getItem('liquid_assets_final');
-    if (saved) { 
-      try { let parsed = JSON.parse(saved); if(parsed.history) state = parsed; } catch (e) {} 
-    }
-
-    if (!state.history[currentMonthStr]) {
-      state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: 0, goals: JSON.parse(JSON.stringify(defaultGoals)) };
-    }
-    if (state.history[currentMonthStr].debt === undefined) state.history[currentMonthStr].debt = 0;
-
-    EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
-    EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
-    EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
-
-    monthFilterEl.value = currentMonthStr;
-    document.body.className = state.theme === 'light' ? 'light' : '';
-    document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
-    
-    // Set status awal Privacy Mode
-    if(state.privacy) document.body.classList.add('privacy-on');
-    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
-  };
-
-  // Firebase Sync
-  async function saveToFB() {
-    if (!currentUser) return;
-    try {
-      await setDoc(doc(db, 'liquid_assets_users', currentUser.uid), { state: state }, { merge: true });
-    } catch(e) { console.error("Firebase save failed", e); }
-  }
-
-  document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
-  document.getElementById('up-logout').addEventListener('click', () => {
-    if(confirm('Yakin ingin keluar akun? Data lokal tetap aman.')) signOut(auth);
-  });
-
-  onAuthStateChanged(auth, async user => {
-    if (user) {
-      currentUser = user;
-      document.getElementById('user-logged-out').style.display = 'none';
-      document.getElementById('user-logged-in').style.display = 'flex';
-      document.getElementById('up-avatar').src = user.photoURL || '';
-      document.getElementById('up-name').textContent = user.displayName || 'Pengguna';
-      document.getElementById('up-email').textContent = user.email || '';
-      
-      syncListener = onSnapshot(doc(db, 'liquid_assets_users', currentUser.uid), (docSnap) => {
-        if (docSnap.metadata.hasPendingWrites) return; 
-
-        if (docSnap.exists() && docSnap.data().state) {
-          state = docSnap.data().state;
-          
-          if (!state.history[currentMonthStr]) {
-            const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
-            let clonedGoals = []; let clonedDebt = 0;
-            if (pastMonths.length > 0) {
-              clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
-              clonedDebt = state.history[pastMonths[0]].debt || 0;
-            } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
-            state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
-          }
-          EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
-          EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
-          EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
-          
-          // Re-apply privacy icon & class correctly from pulled state
-          if(state.privacy) document.body.classList.add('privacy-on'); 
-          else document.body.classList.remove('privacy-on');
-          document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
-          window.lucide.createIcons();
-          
-          saveSilentLocalOnly();
-          renderUI(); 
-        } else {
-          saveToFB();
-        }
-      });
-
-    } else {
-      currentUser = null;
-      if (syncListener) { syncListener(); syncListener = null; } 
-      document.getElementById('user-logged-out').style.display = 'block';
-      document.getElementById('user-logged-in').style.display = 'none';
-    }
-  });
-
-  const saveSilentLocalOnly = () => localStorage.setItem('liquid_assets_final', JSON.stringify(state));
-  const saveSilent = () => {
-    saveSilentLocalOnly();
-    saveToFB(); 
-  };
-  const saveAndRender = () => { 
-    state.history[currentMonthStr].lastUpdated = Date.now();
-    saveSilent(); 
-    renderUI(); 
-  };
-
-  const monthFilterEl = document.getElementById('month-filter');
-  loadLocalData();
-
-  monthFilterEl.addEventListener('change', (e) => {
-    const selected = e.target.value;
-    if (!selected) return;
-    currentMonthStr = selected;
-
-    if (!state.history[currentMonthStr]) {
-      const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
-      let clonedGoals = []; let clonedDebt = 0;
-      if (pastMonths.length > 0) {
-        clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
-        clonedDebt = state.history[pastMonths[0]].debt || 0;
-      } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
-      state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
-    }
-    saveAndRender();
-  });
-
-  document.getElementById('btn-theme').addEventListener('click', () => {
-    state.theme = state.theme === 'light' ? 'dark' : 'light';
-    document.body.className = state.theme === 'light' ? 'light' : '';
-    if(state.privacy) document.body.classList.add('privacy-on');
-    document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'light' ? 'moon' : 'sun');
-    window.lucide.createIcons();
-    renderTrendChart();
-    saveSilent();
-  });
-
-  // Tombol Toggle Privasi
-  document.getElementById('btn-privacy').addEventListener('click', () => {
-    state.privacy = !state.privacy;
-    document.body.classList.toggle('privacy-on', state.privacy);
-    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}"></i>`;
-    window.lucide.createIcons();
-    saveSilent();
-  });
-
-  const panel = document.getElementById('settings-panel');
-  document.getElementById('btn-settings').addEventListener('click', () => {
-    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    document.getElementById('set-antam').value = state.rates['Emas Antam (g)'].toLocaleString('id-ID');
-    document.getElementById('set-emas').value = state.rates['Emas G24 (g)'].toLocaleString('id-ID');
-    document.getElementById('set-dinar').value = state.rates['Dinar KR'].toLocaleString('id-ID');
-  });
-  document.getElementById('close-settings').addEventListener('click', () => panel.style.display = 'none');
-
-  const attachRateSetting = (id, key) => {
-    const el = document.getElementById(id);
-    el.addEventListener('input', function() {
-      let rawVal = this.value.replace(/\D/g, '');
-      if (!rawVal) { this.value = ''; return; }
-      let start = this.selectionStart;
-      let oldLen = this.value.length;
-      let numVal = parseInt(rawVal, 10);
-      let formatted = numVal.toLocaleString('id-ID');
-      this.value = formatted;
-      this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
-      
-      state.rates[key] = numVal;
-      EXCHANGE_RATES[key] = numVal;
-      saveSilent();
-      updateDynamicValues();
-    });
-  };
-  attachRateSetting('set-antam', 'Emas Antam (g)');
-  attachRateSetting('set-emas', 'Emas G24 (g)');
-  attachRateSetting('set-dinar', 'Dinar KR');
-
-  async function fetchLiveRates() {
-    const statusEl = document.getElementById('live-sgd-status');
-    try {
-      const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      const data = await res.json();
-      const sgdRate = data.rates.IDR / data.rates.SGD; 
-      EXCHANGE_RATES.SGD = sgdRate;
-      statusEl.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i> Rp ${Math.round(sgdRate).toLocaleString('id-ID')} (Live API)`;
-      statusEl.style.color = 'var(--success)';
-      window.lucide.createIcons();
-      updateDynamicValues(); 
-    } catch (err) {
-      statusEl.innerHTML = `<i data-lucide="wifi-off" style="width: 16px; height: 16px;"></i> Mode Offline (Rp ${Math.round(EXCHANGE_RATES.SGD).toLocaleString('id-ID')})`;
-      statusEl.style.color = 'var(--txt-dim)';
-      window.lucide.createIcons();
-    }
-  }
-
-  document.getElementById('input-debt').addEventListener('input', function() {
-    let rawVal = this.value.replace(/\D/g, '');
-    if (!rawVal) { 
-      this.value = ''; 
-      state.history[currentMonthStr].debt = 0; 
-    } else {
-      let start = this.selectionStart;
-      let oldLen = this.value.length;
-      let numVal = parseInt(rawVal, 10);
-      let formatted = numVal.toLocaleString('id-ID');
-      
-      this.value = formatted;
-      this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
-      state.history[currentMonthStr].debt = numVal;
-    }
-    state.history[currentMonthStr].lastUpdated = Date.now();
-    saveSilent(); 
-    updateDynamicValues();
-  });
-
-  const renderTrendChart = () => {
-    const ctx = document.getElementById('trendChart').getContext('2d');
-    const months = Object.keys(state.history).sort();
-    const labels = months.map(formatMonthLabel);
-    const dataPoints = months.map(m => state.history[m].netWorth || 0);
-
-    const isLight = document.body.classList.contains('light');
-    const gridColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
-    const textColor = isLight ? '#64748b' : '#94a3b8';
-
-    if (trendChartInstance) trendChartInstance.destroy();
-
-    trendChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Kekayaan Bersih',
-          data: dataPoints,
-          borderColor: '#38bdf8',
-          backgroundColor: 'rgba(56, 189, 248, 0.1)',
-          borderWidth: 2,
-          pointBackgroundColor: '#0f172a',
-          pointBorderColor: '#38bdf8',
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: function(context) { return 'Rp ' + context.parsed.y.toLocaleString('id-ID'); } } }
-        },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: textColor, font: {family: 'Outfit', size: 10} } },
-          y: { 
-            grid: { color: gridColor }, 
-            ticks: { 
-              color: textColor, font: {family: 'Outfit', size: 10},
-              callback: function(value) { return 'Rp ' + (value/1000000) + ' Jt'; }
-            } 
-          }
-        }
-      }
-    });
-  };
-
-  const updateDynamicValues = () => {
-    let globalGrossAssets = 0;
-    const currentGoals = state.history[currentMonthStr].goals;
-    
-    // Objek untuk Rekapitulasi Data
-    let recapData = {};
-
-    currentGoals.forEach((goal, gIdx) => {
-      let goalTotalIDR = 0;
-      let chartData = [];
-
-      goal.assets.forEach((a, aIdx) => {
-        let unitKey = a.unit;
-        const rate = EXCHANGE_RATES[unitKey] || 1;
-        const idrVal = a.amount * rate;
-        goalTotalIDR += idrVal;
+    <main class="w-full max-w-2xl mx-auto p-4 md:p-6 z-10 relative flex flex-col gap-6">
         
-        // Kalkulasi Rekap
-        if (!recapData[unitKey]) recapData[unitKey] = 0;
-        recapData[unitKey] += idrVal;
-
-        const equivEl = document.getElementById(`equiv-${gIdx}-${aIdx}`);
-        if(equivEl) {
-          equivEl.textContent = unitKey.includes('IDR') ? '' : `≈ Rp ${Math.round(idrVal).toLocaleString('id-ID')}`;
-        }
-        if(idrVal > 0) {
-          chartData.push({ name: a.name || 'Aset', val: idrVal, color: CHART_COLORS[aIdx % CHART_COLORS.length] });
-        }
-      });
-
-      globalGrossAssets += goalTotalIDR;
-
-      const target = goal.target || 0;
-      let pct = target > 0 ? (goalTotalIDR / target) * 100 : 0;
-      if (pct > 100) pct = 100;
-
-      const ui = {
-        badge: document.getElementById(`pct-badge-${gIdx}`),
-        progMain: document.getElementById(`prog-main-${gIdx}`),
-        progMini: document.getElementById(`prog-mini-${gIdx}`),
-        miniStat: document.getElementById(`mini-stat-${gIdx}`),
-        statColl: document.getElementById(`stat-coll-${gIdx}`),
-        statRem: document.getElementById(`stat-rem-${gIdx}`),
-        chart: document.getElementById(`chart-${gIdx}`),
-        legend: document.getElementById(`legend-${gIdx}`)
-      };
-
-      if(ui.badge) ui.badge.textContent = `${Math.round(pct)}% Tercapai`;
-      if(ui.progMain) ui.progMain.style.width = `${pct}%`;
-      if(ui.progMini) ui.progMini.style.width = `${pct}%`;
-      if(ui.miniStat) ui.miniStat.textContent = `Terkumpul: Rp ${Math.round(goalTotalIDR).toLocaleString('id-ID')}`;
-      if(ui.statColl) ui.statColl.textContent = `Rp ${Math.round(goalTotalIDR).toLocaleString('id-ID')}`;
-      if(ui.statRem) ui.statRem.textContent = `Rp ${Math.max(0, target - goalTotalIDR).toLocaleString('id-ID')}`;
-
-      if(ui.chart && ui.legend) {
-        if(goalTotalIDR === 0) {
-          ui.chart.style.background = 'var(--track-bg)';
-          ui.legend.innerHTML = '<span style="opacity:0.5">Belum ada aset</span>';
-        } else {
-          let gradient = [];
-          let currentPct = 0;
-          let legendHTML = '';
-          chartData.forEach(cd => {
-            let slicePct = (cd.val / goalTotalIDR) * 100;
-            gradient.push(`${cd.color} ${currentPct}% ${currentPct + slicePct}%`);
-            currentPct += slicePct;
-            legendHTML += `<div class="legend-item"><div class="legend-dot" style="background:${cd.color}"></div>${cd.name} (${Math.round(slicePct)}%)</div>`;
-          });
-          ui.chart.style.background = `conic-gradient(${gradient.join(', ')})`;
-          ui.legend.innerHTML = legendHTML;
-        }
-      }
-    });
-
-    const currentDebt = state.history[currentMonthStr].debt || 0;
-    const netWorth = globalGrossAssets - currentDebt;
-
-    state.history[currentMonthStr].netWorth = netWorth;
-    
-    document.getElementById('lbl-current-month').textContent = formatMonthLabel(currentMonthStr);
-    document.getElementById('lbl-total-assets').textContent = `Rp ${Math.round(globalGrossAssets).toLocaleString('id-ID')}`;
-    
-    const nwEl = document.getElementById('global-net-worth');
-    nwEl.textContent = `Rp ${Math.round(netWorth).toLocaleString('id-ID')}`;
-    nwEl.style.color = netWorth < 0 ? 'var(--danger-txt)' : 'var(--success)';
-
-    const debtInput = document.getElementById('input-debt');
-    if (document.activeElement !== debtInput) {
-      debtInput.value = currentDebt === 0 ? '' : currentDebt.toLocaleString('id-ID');
-    }
-
-    document.getElementById('last-updated-lbl').innerHTML = `<i data-lucide="clock" style="width:10px;height:10px;display:inline-block;margin-right:2px;vertical-align:middle;"></i> Updated: ${formatTimestamp(state.history[currentMonthStr].lastUpdated)}`;
-    
-    // Render Rekapitulasi UI
-    const recapContainer = document.getElementById('recap-container');
-    recapContainer.innerHTML = '';
-    
-    if (Object.keys(recapData).length === 0) {
-      recapContainer.innerHTML = '<div style="grid-column: span 2; text-align: center; font-size: 13px; color: var(--txt-dim); padding: 10px;">Belum ada aset bulan ini.</div>';
-    } else {
-      for (const [unit, totalVal] of Object.entries(recapData)) {
-        if (totalVal > 0) {
-          recapContainer.innerHTML += `
-            <div class="recap-item">
-              <div class="recap-label"><i data-lucide="${ICONS[unit] || 'circle-dollar-sign'}" style="width:12px;height:12px;"></i> ${unit}</div>
-              <div class="recap-val mask-data">Rp ${Math.round(totalVal).toLocaleString('id-ID')}</div>
-            </div>
-          `;
-        }
-      }
-    }
-
-    // Render Health Score UI
-    const healthContainer = document.getElementById('health-container');
-    healthContainer.innerHTML = '';
-    
-    // 1. Debt Ratio (Beban Hutang)
-    let debtRatio = globalGrossAssets > 0 ? (currentDebt / globalGrossAssets) * 100 : (currentDebt > 0 ? 100 : 0);
-    let debtClass = debtRatio === 0 ? 'hb-good' : (debtRatio <= 30 ? 'hb-warn' : 'hb-bad');
-    let debtText = debtRatio === 0 ? 'Bebas Hutang' : (debtRatio <= 30 ? 'Aman' : 'Beban Tinggi');
-    
-    healthContainer.innerHTML += `
-      <div class="recap-item">
-        <div class="recap-label">Rasio Hutang</div>
-        <div class="recap-val">${debtRatio.toFixed(1)}%</div>
-        <div class="health-badge ${debtClass}">${debtText}</div>
-      </div>
-    `;
-
-    // 2. Diversification (Penyebaran Aset)
-    let diversCount = Object.keys(recapData).length;
-    let divClass = diversCount >= 3 ? 'hb-good' : (diversCount === 2 ? 'hb-warn' : 'hb-bad');
-    let divText = diversCount >= 3 ? 'Sangat Baik' : (diversCount === 2 ? 'Cukup' : 'Kurang Menyebar');
-    
-    healthContainer.innerHTML += `
-      <div class="recap-item">
-        <div class="recap-label">Diversifikasi</div>
-        <div class="recap-val">${diversCount} Kategori</div>
-        <div class="health-badge ${divClass}">${divText}</div>
-      </div>
-    `;
-
-    window.lucide.createIcons();
-    renderTrendChart();
-  };
-
-  const attachRealtimeFormat = (inputEl, updateCallback, unit) => {
-    inputEl.addEventListener('input', function() {
-      if (unit.includes('IDR') || unit === 'TARGET') {
-        let rawVal = this.value.replace(/\D/g, '');
-        if (!rawVal) { this.value = ''; updateCallback(0); } else {
-          let start = this.selectionStart;
-          let oldLen = this.value.length;
-          let numVal = parseInt(rawVal, 10);
-          let formatted = numVal.toLocaleString('id-ID');
-          
-          this.value = formatted;
-          this.setSelectionRange(start + (formatted.length - oldLen), start + (formatted.length - oldLen));
-          updateCallback(numVal);
-        }
-      } else {
-        let rawVal = this.value.replace(/[^0-9.]/g, '');
-        this.value = rawVal;
-        updateCallback(parseFloat(rawVal) || 0);
-      }
-      
-      state.history[currentMonthStr].lastUpdated = Date.now();
-      saveSilent(); 
-      updateDynamicValues();
-    });
-  };
-
-  window.toggleCollapse = (gIdx) => {
-    state.history[currentMonthStr].goals[gIdx].collapsed = !state.history[currentMonthStr].goals[gIdx].collapsed;
-    const card = document.getElementById(`goal-card-${gIdx}`);
-    state.history[currentMonthStr].goals[gIdx].collapsed ? card.classList.add('is-collapsed') : card.classList.remove('is-collapsed');
-    saveSilent();
-  };
-
-  const renderUI = () => {
-    const container = document.getElementById('goals-container');
-    container.innerHTML = '';
-    const currentGoals = state.history[currentMonthStr].goals;
-
-    currentGoals.forEach((goal, gIdx) => {
-      const card = document.createElement('div');
-      card.className = `glass-card ${goal.collapsed ? 'is-collapsed' : ''}`;
-      card.id = `goal-card-${gIdx}`;
-      
-      let assetsHTML = goal.assets.length === 0 
-        ? `<div style="text-align:center; padding: 10px; color: var(--txt-dim); font-size: 13px;">Belum ada aset di bulan ini.</div>`
-        : goal.assets.map((a, aIdx) => {
-            const formatVal = a.unit.includes('IDR') ? (a.amount ? a.amount.toLocaleString('id-ID') : '') : (a.amount || '');
-            return `
-            <div class="asset-item">
-              <div class="asset-icon"><i data-lucide="${ICONS[a.unit] || 'circle-dollar-sign'}"></i></div>
-              <div class="asset-info">
-                <input class="asset-name" type="text" value="${a.name}" placeholder="Tulis Nama Aset..." data-gidx="${gIdx}" data-aidx="${aIdx}">
-                <div class="asset-val-group" style="align-items: flex-start;">
-                  <div class="val-input-row">
-                    <input class="asset-amount mask-data" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}" style="text-align: left; width: 120px;">
-                    <select class="asset-unit" data-gidx="${gIdx}" data-aidx="${aIdx}">
-                      ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
-                    </select>
-                  </div>
-                  <div class="asset-equiv mask-data" id="equiv-${gIdx}-${aIdx}"></div>
-                </div>
-              </div>
-              <button class="btn-del btn-del-asset" data-gidx="${gIdx}" data-aidx="${aIdx}"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
-            </div>
-            `;
-          }).join('');
-
-      card.innerHTML = `
-        <div class="goal-header" onclick="window.toggleCollapse(${gIdx})">
-          <div style="flex:1; min-width:0;">
-            <input class="goal-title-input" list="goal-suggestions" value="${goal.name}" placeholder="Tujuan Tabungan" onclick="event.stopPropagation()">
-            <div class="mini-summary">
-              <div class="mini-stat mask-data" id="mini-stat-${gIdx}">Terkumpul: Rp 0</div>
-              <div class="progress-mini"><div class="progress-fill" id="prog-mini-${gIdx}" style="width: 0%"></div></div>
-            </div>
-          </div>
-          <button class="btn-collapse"><i data-lucide="chevron-up"></i></button>
-        </div>
-        
-        <div class="card-body">
-          <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
+        <!-- Top Bar -->
+        <header class="flex justify-between items-start">
             <div>
-              <label class="input-label">Target Dana (Rp)</label>
-              <input type="text" inputmode="numeric" class="input-glass goal-target-input mask-data" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0">
+                <h1 class="font-display text-3xl font-bold tracking-tight bg-gradient-to-r from-accent to-indigo-500 bg-clip-text text-transparent">AsetGo</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <input type="month" id="month-filter" class="glass-input !py-1 !px-3 !w-auto !text-xs font-display font-semibold cursor-pointer">
+                    <span id="last-updated-lbl" class="text-[10px] text-slate-500 dark:text-slate-400">Updated: -</span>
+                </div>
             </div>
-            <div style="text-align: right;"><span class="pct-badge" id="pct-badge-${gIdx}">0% Tercapai</span></div>
-          </div>
-
-          <div class="progress-wrapper">
-            <div class="progress-glass"><div class="progress-fill" id="prog-main-${gIdx}" style="width: 0%;"></div></div>
-            <div class="progress-stats">
-              <div><div class="stat-label">Terkumpul</div><div class="stat-val success mask-data" id="stat-coll-${gIdx}">Rp 0</div></div>
-              <div style="text-align: right;"><div class="stat-label">Kekurangan</div><div class="stat-val mask-data" id="stat-rem-${gIdx}">Rp 0</div></div>
+            <div class="flex gap-2">
+                <button id="btn-privacy" class="p-2.5 rounded-xl glass hover:scale-105 active:scale-95 transition-transform text-slate-600 dark:text-slate-300" title="Mode Privasi">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
+                </button>
+                <button id="btn-settings" class="p-2.5 rounded-xl glass hover:scale-105 active:scale-95 transition-transform text-slate-600 dark:text-slate-300" title="Pengaturan">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+                <button id="btn-theme" class="p-2.5 rounded-xl glass hover:scale-105 active:scale-95 transition-transform text-slate-600 dark:text-slate-300" title="Ganti Tema">
+                    <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i>
+                </button>
             </div>
-          </div>
+        </header>
 
-          <div class="chart-section">
-             <div class="donut-chart" id="chart-${gIdx}"></div>
-             <div class="chart-legend" id="legend-${gIdx}"></div>
-          </div>
+        <div id="settings-panel" class="glass p-6 border-accent/50 shadow-[0_0_30px_rgba(56,189,248,0.15)] relative">
+            <button id="close-settings" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white"><i data-lucide="x"></i></button>
+            
+            <div class="flex items-center gap-2 font-display font-bold text-lg mb-6">
+                <i data-lucide="sliders-horizontal" class="text-accent"></i> Pengaturan
+            </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 12px;">
-             <div class="asset-section-title" style="margin:0"><i data-lucide="layers" style="width:14px; height:14px;"></i> Aset Disimpan</div>
-             <button class="btn-del-goal" data-gidx="${gIdx}" title="Hapus Tabungan"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
-          </div>
-          <div class="asset-list-container">${assetsHTML}</div>
-          <button class="btn-add-asset" data-gidx="${gIdx}">+ Tambah Catatan Aset</button>
+            <!-- Auth Section -->
+            <div class="mb-6 pb-6 border-b border-slate-200 dark:border-slate-700/50">
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="cloud-upload" class="w-4 h-4"></i> Cloud Sync (Firebase)
+                </div>
+                <div id="user-logged-out">
+                    <button id="btn-login" class="w-full py-3 rounded-xl bg-slate-900 dark:bg-accent text-white font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                        <i data-lucide="log-in" class="w-5 h-5"></i> Masuk dengan Google
+                    </button>
+                    <p class="text-[11px] text-center text-slate-500 mt-2">Simpan dan sinkronkan datamu secara realtime antar perangkat.</p>
+                </div>
+                <div id="user-logged-in" class="hidden items-center justify-between bg-slate-100 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                    <div class="flex items-center gap-3">
+                        <img id="up-avatar" src="" class="w-10 h-10 rounded-full border-2 border-accent/50">
+                        <div>
+                            <div id="up-name" class="font-semibold text-sm"></div>
+                            <div id="up-email" class="text-[11px] text-slate-500"></div>
+                        </div>
+                    </div>
+                    <button id="up-logout" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 text-xs font-semibold hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors">
+                        Keluar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rates Section -->
+            <div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                    <i data-lucide="coins" class="w-4 h-4"></i> Harga & Nilai Tukar
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-xs text-slate-500 mb-1.5">Kurs SGD ke Rupiah (Auto Sync API)</label>
+                    <div id="live-sgd-status" class="glass-input !bg-slate-50 dark:!bg-slate-800/50 flex items-center gap-2 text-success font-display font-semibold">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Menyinkronkan...
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1.5 font-medium">Emas Antam / gr</label>
+                        <input type="text" inputmode="numeric" class="glass-input" id="set-antam" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1.5 font-medium">Emas Galeri24 / gr</label>
+                        <input type="text" inputmode="numeric" class="glass-input" id="set-emas" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-500 mb-1.5 font-medium">Dinar KR</label>
+                        <input type="text" inputmode="numeric" class="glass-input" id="set-dinar" placeholder="0">
+                    </div>
+                </div>
+            </div>
         </div>
-      `;
-      container.appendChild(card);
 
-      card.querySelector('.goal-title-input').addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].name = e.target.value; saveAndRender(); });
-      attachRealtimeFormat(card.querySelector('.goal-target-input'), (v) => { state.history[currentMonthStr].goals[gIdx].target = v; }, 'TARGET');
+        <div class="glass p-6 text-center relative overflow-hidden">
+            <!-- Decorative gradient bg inside card -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-accent/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      card.querySelectorAll('.asset-name').forEach(el => el.addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].name = e.target.value; saveAndRender(); }));
-      
-      card.querySelectorAll('.asset-unit').forEach(el => {
-        el.addEventListener('change', e => { 
-          state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].unit = e.target.value; 
-          saveAndRender(); 
+            <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-2">Kekayaan Bersih</div>
+            <div class="font-display text-4xl md:text-5xl font-bold tracking-tight mb-8 mask-data" id="global-net-worth">Rp 0</div>
+
+            <div class="grid grid-cols-2 gap-4 mb-8 text-left">
+                <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-500 mb-1">
+                        <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5 text-success"></i> Total Aset
+                    </div>
+                    <div id="lbl-total-assets" class="font-display text-lg font-bold text-success mask-data">Rp 0</div>
+                </div>
+                <div class="bg-red-50 dark:bg-red-900/10 p-4 rounded-2xl border border-red-100 dark:border-red-900/30">
+                    <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-red-500 mb-1">
+                        <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i> Total Hutang
+                    </div>
+                    <div class="flex items-center gap-1 border-b border-red-300 dark:border-red-800/50 focus-within:border-red-500 transition-colors pb-1">
+                        <span class="font-display font-bold text-red-500">Rp</span>
+                        <input type="text" inputmode="numeric" id="input-debt" class="bg-transparent border-none outline-none font-display font-bold text-lg text-red-600 dark:text-red-400 w-full mask-data" placeholder="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Chart Section -->
+            <div class="border-t border-slate-200 dark:border-slate-700/50 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <i data-lucide="line-chart" class="w-4 h-4"></i> Tren Historis
+                    </div>
+                    <!-- Dropdown for Chart Metric -->
+                    <select id="chart-metric-select" class="glass-input !py-1 !px-2 !w-auto text-xs font-display font-semibold cursor-pointer border-none bg-slate-100 dark:bg-slate-800 focus:ring-0">
+                        <option value="netWorth">Kekayaan Bersih</option>
+                        <option value="assets">Total Aset</option>
+                        <option value="debt">Total Hutang</option>
+                    </select>
+                </div>
+                <div class="h-40 w-full relative">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass p-6">
+            <h2 class="text-sm font-bold font-display flex items-center gap-2 mb-4">
+                <i data-lucide="pie-chart" class="text-accent"></i> Rekapitulasi Portofolio
+            </h2>
+            <div id="recap-container" class="grid grid-cols-2 gap-3 mb-8">
+                <!-- Recap items generated by JS -->
+            </div>
+
+            <div class="border-t border-slate-200 dark:border-slate-700/50 pt-6">
+                <h2 class="text-sm font-bold font-display flex items-center gap-2 mb-4 text-slate-700 dark:text-slate-200">
+                    <i data-lucide="heart-pulse" class="text-rose-500"></i> Skor Kesehatan Keuangan
+                </h2>
+                
+                <!-- Health Score: Debt Ratio -->
+                <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 mb-4">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <div class="text-xs text-slate-500 font-semibold mb-0.5">Rasio Hutang terhadap Aset</div>
+                            <div class="font-display font-bold text-lg" id="health-debt-txt">0%</div>
+                        </div>
+                        <div id="health-debt-badge" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">Aman</div>
+                    </div>
+                    
+                    <!-- Progress Bar for Debt Ratio -->
+                    <div class="relative h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-3">
+                        <!-- Safe Marker at 30% -->
+                        <div class="absolute top-0 bottom-0 left-[30%] w-0.5 bg-slate-400/50 dark:bg-slate-500/50 z-10" title="Batas Aman (30%)"></div>
+                        <div class="absolute top-0 bottom-0 left-[50%] w-0.5 bg-red-400/50 dark:bg-red-500/50 z-10" title="Batas Bahaya (50%)"></div>
+                        
+                        <!-- The fill bar -->
+                        <div id="health-debt-bar" class="h-full bg-success transition-all duration-500 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-[9px] text-slate-400 mt-1 uppercase font-bold">
+                        <span>Aman (< 30%)</span>
+                        <span>Bahaya (> 50%)</span>
+                    </div>
+                </div>
+
+                <!-- Health Score: Diversification -->
+                <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <div class="text-xs text-slate-500 font-semibold mb-0.5">Diversifikasi (Sebaran Kelas Aset)</div>
+                            <div class="font-display font-bold text-lg text-slate-700 dark:text-slate-200" id="health-div-txt">0 Kategori</div>
+                        </div>
+                        <div id="health-div-badge" class="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">Kurang</div>
+                    </div>
+                    <!-- Simple step bar for diversification (target 4+ categories) -->
+                    <div class="flex gap-1 h-2 mt-3" id="health-div-steps">
+                        <!-- Steps generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="goals-container" class="flex flex-col gap-4">
+            <!-- Goal Cards generated by JS -->
+        </div>
+
+        <button id="btn-add-goal" class="glass w-full p-4 flex items-center justify-center gap-2 text-accent font-bold hover:bg-accent/5 dark:hover:bg-accent/10 transition-colors border-dashed border-2">
+            <i data-lucide="folder-plus"></i> Buat Kantong Tabungan Baru
+        </button>
+
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- Firebase Config ---
+        const FB = {
+            apiKey: "AIzaSyDKUSL_DSRjORdxpLsahxLamOluOLIQss8",
+            authDomain: "assets-liquid.firebaseapp.com",
+            projectId: "assets-liquid",
+            storageBucket: "assets-liquid.firebasestorage.app",
+            messagingSenderId: "573395404798",
+            appId: "1:573395404798:web:b3f5c70f1d05500d6d62af"
+        };
+        const fbApp = initializeApp(FB);
+        const auth = getAuth(fbApp);
+        const db = getFirestore(fbApp);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let syncListener = null;
+
+        // --- Constants & Data Setup ---
+        let EXCHANGE_RATES = {
+            'IDR / Tabungan': 1, 'Saham (IDR)': 1, 'Reksadana (IDR)': 1, 'Obligasi (IDR)': 1,
+            'Kripto (IDR)': 1, 'Properti (IDR)': 1, 'SGD': 11800,
+            'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000
+        };
+
+        const UNITS = Object.keys(EXCHANGE_RATES);
+        const ICONS = { 'IDR / Tabungan': 'landmark', 'Saham (IDR)': 'trending-up', 'Reksadana (IDR)': 'pie-chart', 'Obligasi (IDR)': 'scroll-text', 'Kripto (IDR)': 'bitcoin', 'Properti (IDR)': 'home', 'SGD': 'banknote', 'Emas Antam (g)': 'coins', 'Emas G24 (g)': 'coins', 'Dinar KR': 'circle-dot' };
+
+        const getTodayMonthStr = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        };
+
+        const formatTimestamp = (ts) => {
+            if(!ts) return '-';
+            const d = new Date(ts);
+            const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        };
+
+        const formatMonthLabel = (yyyy_mm) => {
+            const [y, m] = yyyy_mm.split('-');
+            const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+            return `${months[parseInt(m)-1]} ${y}`;
+        };
+
+        let currentMonthStr = getTodayMonthStr();
+        let trendChartInstance = null;
+        let selectedChartMetric = 'netWorth'; // Default chart view
+
+        let state = {
+            theme: 'dark', // Default to dark theme for modern look
+            privacy: false,
+            rates: { 'Emas Antam (g)': 1400000, 'Emas G24 (g)': 1400000, 'Dinar KR': 4500000 },
+            history: {} 
+        };
+
+        const defaultGoals = [
+            { id: 1, name: 'Dana Darurat', target: 50000000, collapsed: false, assets: [{ id: 101, name: 'Kas Rekening', unit: 'IDR / Tabungan', amount: 12500000 }, { id: 102, name: 'Emas Batangan', unit: 'Emas Antam (g)', amount: 5 }] }
+        ];
+
+        const loadLocalData = () => {
+            const saved = localStorage.getItem('liquid_assets_final');
+            if (saved) { 
+                try { let parsed = JSON.parse(saved); if(parsed.history) state = parsed; } catch (e) {} 
+            }
+
+            if (!state.history[currentMonthStr]) {
+                state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: 0, goals: JSON.parse(JSON.stringify(defaultGoals)) };
+            }
+            if (state.history[currentMonthStr].debt === undefined) state.history[currentMonthStr].debt = 0;
+
+            EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
+            EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
+            EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
+
+            document.getElementById('month-filter').value = currentMonthStr;
+            
+            // Apply Theme
+            document.documentElement.className = state.theme === 'dark' ? 'dark antialiased' : 'antialiased';
+            document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'dark' ? 'sun' : 'moon');
+            
+            // Apply Privacy Mode
+            if(state.privacy) document.body.classList.add('privacy-on');
+            document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}" class="w-5 h-5"></i>`;
+        };
+
+        const saveSilentLocalOnly = () => localStorage.setItem('liquid_assets_final', JSON.stringify(state));
+        const saveSilent = () => { saveSilentLocalOnly(); saveToFB(); };
+        const saveAndRender = () => { 
+            state.history[currentMonthStr].lastUpdated = Date.now();
+            saveSilent(); 
+            updateDynamicValues(); 
+            renderUI(); 
+        };
+
+        // Firebase Sync Functions
+        async function saveToFB() {
+            if (!currentUser) return;
+            try { await setDoc(doc(db, 'liquid_assets_users', currentUser.uid), { state: state }, { merge: true }); } 
+            catch(e) { console.error("Firebase save failed", e); }
+        }
+
+        document.getElementById('btn-login').addEventListener('click', () => signInWithPopup(auth, provider));
+        document.getElementById('up-logout').addEventListener('click', () => {
+            if(confirm('Yakin ingin keluar akun? Data lokal tetap aman.')) signOut(auth);
         });
-      });
-      
-      card.querySelectorAll('.asset-amount').forEach(el => {
-        attachRealtimeFormat(el, (v) => { state.history[currentMonthStr].goals[gIdx].assets[el.dataset.aidx].amount = v; }, el.dataset.unit);
-      });
 
-      card.querySelector('.btn-del-goal').addEventListener('click', (e) => {
-        e.stopPropagation(); if(confirm('Yakin ingin menghapus tujuan tabungan ini?')) { state.history[currentMonthStr].goals.splice(gIdx, 1); saveAndRender(); }
-      });
-      card.querySelector('.btn-add-asset').addEventListener('click', () => {
-        state.history[currentMonthStr].goals[gIdx].assets.push({ id: Date.now(), name: '', unit: 'IDR / Tabungan', amount: 0 }); saveAndRender();
-      });
-      card.querySelectorAll('.btn-del-asset').forEach(el => el.addEventListener('click', e => {
-        state.history[currentMonthStr].goals[gIdx].assets.splice(e.currentTarget.dataset.aidx, 1); saveAndRender();
-      }));
-    });
+        onAuthStateChanged(auth, async user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-logged-out').style.display = 'none';
+                document.getElementById('user-logged-in').style.display = 'flex';
+                document.getElementById('up-avatar').src = user.photoURL || '';
+                document.getElementById('up-name').textContent = user.displayName || 'Pengguna';
+                document.getElementById('up-email').textContent = user.email || '';
+                
+                syncListener = onSnapshot(doc(db, 'liquid_assets_users', currentUser.uid), (docSnap) => {
+                    if (docSnap.metadata.hasPendingWrites) return; 
+                    if (docSnap.exists() && docSnap.data().state) {
+                        state = docSnap.data().state;
+                        
+                        if (!state.history[currentMonthStr]) {
+                            const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
+                            let clonedGoals = []; let clonedDebt = 0;
+                            if (pastMonths.length > 0) {
+                                clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
+                                clonedDebt = state.history[pastMonths[0]].debt || 0;
+                            } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
+                            state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
+                        }
+                        EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)'];
+                        EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)'];
+                        EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
+                        
+                        document.documentElement.className = state.theme === 'dark' ? 'dark antialiased' : 'antialiased';
+                        if(state.privacy) document.body.classList.add('privacy-on'); else document.body.classList.remove('privacy-on');
+                        
+                        saveSilentLocalOnly();
+                        updateDynamicValues();
+                        renderUI(); 
+                    } else { saveToFB(); }
+                });
+            } else {
+                currentUser = null;
+                if (syncListener) { syncListener(); syncListener = null; } 
+                document.getElementById('user-logged-out').style.display = 'block';
+                document.getElementById('user-logged-in').style.display = 'none';
+            }
+        });
 
-    window.lucide.createIcons();
-    updateDynamicValues(); 
-  };
+        // Top Bar Actions
+        document.getElementById('month-filter').addEventListener('change', (e) => {
+            if (!e.target.value) return;
+            currentMonthStr = e.target.value;
+            if (!state.history[currentMonthStr]) {
+                const pastMonths = Object.keys(state.history).filter(m => m < currentMonthStr).sort().reverse();
+                let clonedGoals = []; let clonedDebt = 0;
+                if (pastMonths.length > 0) {
+                    clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals));
+                    clonedDebt = state.history[pastMonths[0]].debt || 0;
+                } else { clonedGoals = JSON.parse(JSON.stringify(defaultGoals)); }
+                state.history[currentMonthStr] = { lastUpdated: Date.now(), netWorth: 0, debt: clonedDebt, goals: clonedGoals };
+            }
+            saveAndRender();
+        });
 
-  document.getElementById('btn-add-goal').addEventListener('click', () => {
-    state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
-    saveAndRender();
-    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
-  });
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            document.documentElement.className = state.theme === 'dark' ? 'dark antialiased' : 'antialiased';
+            document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'dark' ? 'sun' : 'moon');
+            window.lucide.createIcons();
+            renderTrendChart();
+            saveSilent();
+        });
 
-  renderUI();
-  fetchLiveRates();
-</script>
+        document.getElementById('btn-privacy').addEventListener('click', () => {
+            state.privacy = !state.privacy;
+            document.body.classList.toggle('privacy-on', state.privacy);
+            document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}" class="w-5 h-5"></i>`;
+            window.lucide.createIcons();
+            saveSilent();
+        });
 
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(err => console.log('PWA SW Gagal:', err));
-  }
-</script>
+        // Settings Panel
+        const panel = document.getElementById('settings-panel');
+        document.getElementById('btn-settings').addEventListener('click', () => {
+            panel.classList.toggle('active');
+            document.getElementById('set-antam').value = state.rates['Emas Antam (g)'].toLocaleString('id-ID');
+            document.getElementById('set-emas').value = state.rates['Emas G24 (g)'].toLocaleString('id-ID');
+            document.getElementById('set-dinar').value = state.rates['Dinar KR'].toLocaleString('id-ID');
+        });
+        document.getElementById('close-settings').addEventListener('click', () => panel.classList.remove('active'));
 
-<script>
-  // Daftarkan Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-  }
-</script>
+        // Chart Metric Selector
+        document.getElementById('chart-metric-select').addEventListener('change', (e) => {
+            selectedChartMetric = e.target.value;
+            renderTrendChart();
+        });
 
+        const attachRateSetting = (id, key) => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', function() {
+                let rawVal = this.value.replace(/\D/g, '');
+                if (!rawVal) { this.value = ''; return; }
+                let numVal = parseInt(rawVal, 10);
+                this.value = numVal.toLocaleString('id-ID');
+                state.rates[key] = numVal;
+                EXCHANGE_RATES[key] = numVal;
+                saveSilent();
+                updateDynamicValues();
+            });
+        };
+        attachRateSetting('set-antam', 'Emas Antam (g)');
+        attachRateSetting('set-emas', 'Emas G24 (g)');
+        attachRateSetting('set-dinar', 'Dinar KR');
 
-  
+        async function fetchLiveRates() {
+            const statusEl = document.getElementById('live-sgd-status');
+            try {
+                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await res.json();
+                const sgdRate = data.rates.IDR / data.rates.SGD; 
+                EXCHANGE_RATES.SGD = sgdRate;
+                statusEl.innerHTML = `<i data-lucide="check-circle-2" class="w-4 h-4"></i> Rp ${Math.round(sgdRate).toLocaleString('id-ID')} (Live API)`;
+                statusEl.className = "glass-input !bg-slate-50 dark:!bg-slate-800/50 flex items-center gap-2 text-success font-display font-semibold";
+                window.lucide.createIcons();
+                updateDynamicValues(); 
+            } catch (err) {
+                statusEl.innerHTML = `<i data-lucide="wifi-off" class="w-4 h-4"></i> Offline (Rp ${Math.round(EXCHANGE_RATES.SGD).toLocaleString('id-ID')})`;
+                statusEl.className = "glass-input !bg-slate-50 dark:!bg-slate-800/50 flex items-center gap-2 text-slate-500 font-display font-semibold";
+                window.lucide.createIcons();
+            }
+        }
+
+        document.getElementById('input-debt').addEventListener('input', function() {
+            let rawVal = this.value.replace(/\D/g, '');
+            if (!rawVal) { 
+                this.value = ''; 
+                state.history[currentMonthStr].debt = 0; 
+            } else {
+                let numVal = parseInt(rawVal, 10);
+                this.value = numVal.toLocaleString('id-ID');
+                state.history[currentMonthStr].debt = numVal;
+            }
+            state.history[currentMonthStr].lastUpdated = Date.now();
+            saveSilent(); 
+            updateDynamicValues();
+        });
+
+        const attachRealtimeFormat = (inputEl, updateCallback, unit) => {
+            inputEl.addEventListener('input', function() {
+                if (unit.includes('IDR') || unit === 'TARGET') {
+                    let rawVal = this.value.replace(/\D/g, '');
+                    if (!rawVal) { this.value = ''; updateCallback(0); } else {
+                        let numVal = parseInt(rawVal, 10);
+                        this.value = numVal.toLocaleString('id-ID');
+                        updateCallback(numVal);
+                    }
+                } else {
+                    let rawVal = this.value.replace(/[^0-9.]/g, '');
+                    this.value = rawVal;
+                    updateCallback(parseFloat(rawVal) || 0);
+                }
+                state.history[currentMonthStr].lastUpdated = Date.now();
+                saveSilent(); 
+                updateDynamicValues();
+                
+                // If updating target, we need to re-render the specific goal's progress bar visually without a full re-render
+                // For simplicity in this vanilla structure, updateDynamicValues handles the math, but full re-render is heavy.
+                // updateDynamicValues handles DOM updates for progress bars already via IDs.
+            });
+        };
+
+        const renderTrendChart = () => {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const months = Object.keys(state.history).sort();
+            const labels = months.map(formatMonthLabel);
+            
+            // Calculate data points based on selected metric
+            const dataPoints = months.map(m => {
+                const hist = state.history[m];
+                const debt = hist.debt || 0;
+                
+                if (selectedChartMetric === 'netWorth') return hist.netWorth || 0;
+                if (selectedChartMetric === 'debt') return debt;
+                
+                // For 'assets', calculate total assets for that historical month
+                // Total Assets = Net Worth + Debt
+                return (hist.netWorth || 0) + debt;
+            });
+
+            // Theme colors
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            const textColor = isDark ? '#94a3b8' : '#64748b'; // slate-400 : slate-500
+
+            // Line colors based on metric
+            let lineColor = '#38bdf8'; // accent (Net Worth)
+            let bgColor = 'rgba(56, 189, 248, 0.1)';
+            if (selectedChartMetric === 'assets') {
+                lineColor = '#10b981'; // success
+                bgColor = 'rgba(16, 185, 129, 0.1)';
+            } else if (selectedChartMetric === 'debt') {
+                lineColor = '#ef4444'; // danger
+                bgColor = 'rgba(239, 68, 68, 0.1)';
+            }
+
+            if (trendChartInstance) trendChartInstance.destroy();
+
+            trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: document.querySelector(`#chart-metric-select option[value="${selectedChartMetric}"]`).text,
+                        data: dataPoints,
+                        borderColor: lineColor,
+                        backgroundColor: bgColor,
+                        borderWidth: 2,
+                        pointBackgroundColor: isDark ? '#0f172a' : '#ffffff',
+                        pointBorderColor: lineColor,
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                            titleColor: isDark ? '#f8fafc' : '#0f172a',
+                            bodyColor: isDark ? '#cbd5e1' : '#475569',
+                            borderColor: gridColor,
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: { 
+                                label: function(context) { return 'Rp ' + context.parsed.y.toLocaleString('id-ID'); } 
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: textColor, font: {family: 'Outfit', size: 10} } 
+                        },
+                        y: { 
+                            grid: { color: gridColor }, 
+                            ticks: { 
+                                color: textColor, font: {family: 'Outfit', size: 10},
+                                callback: function(value) { return 'Rp ' + (value/1000000) + 'Jt'; }
+                            } 
+                        }
+                    }
+                }
+            });
+        };
+
+        const updateDynamicValues = () => {
+            let globalGrossAssets = 0;
+            const currentGoals = state.history[currentMonthStr].goals;
+            let recapData = {};
+
+            // 1. Calculate values
+            currentGoals.forEach((goal, gIdx) => {
+                let goalTotalIDR = 0;
+
+                goal.assets.forEach((a, aIdx) => {
+                    let unitKey = a.unit;
+                    const rate = EXCHANGE_RATES[unitKey] || 1;
+                    const idrVal = a.amount * rate;
+                    goalTotalIDR += idrVal;
+                    
+                    if (!recapData[unitKey]) recapData[unitKey] = 0;
+                    recapData[unitKey] += idrVal;
+
+                    // Update DOM equivalent text if exists
+                    const equivEl = document.getElementById(`equiv-${gIdx}-${aIdx}`);
+                    if(equivEl) {
+                        equivEl.textContent = unitKey.includes('IDR') ? '' : `≈ Rp ${Math.round(idrVal).toLocaleString('id-ID')}`;
+                    }
+                });
+
+                globalGrossAssets += goalTotalIDR;
+
+                // Update individual goal progress DOM
+                const target = goal.target || 0;
+                let pct = target > 0 ? (goalTotalIDR / target) * 100 : 0;
+                if (pct > 100) pct = 100;
+
+                const ui = {
+                    progMain: document.getElementById(`prog-main-${gIdx}`),
+                    txtPct: document.getElementById(`txt-pct-${gIdx}`),
+                    txtColl: document.getElementById(`txt-coll-${gIdx}`),
+                    txtRem: document.getElementById(`txt-rem-${gIdx}`)
+                };
+
+                if(ui.progMain) {
+                    ui.progMain.style.width = `${pct}%`;
+                    // Change color based on completion
+                    if(pct >= 100) ui.progMain.className = "h-full bg-success transition-all duration-500 rounded-full";
+                    else ui.progMain.className = "h-full bg-gradient-to-r from-accent to-indigo-500 transition-all duration-500 rounded-full";
+                }
+                if(ui.txtPct) ui.txtPct.textContent = `${Math.round(pct)}%`;
+                if(ui.txtColl) ui.txtColl.textContent = `Terkumpul: Rp ${Math.round(goalTotalIDR).toLocaleString('id-ID')}`;
+                if(ui.txtRem) {
+                    const rem = Math.max(0, target - goalTotalIDR);
+                    ui.txtRem.textContent = target > 0 && rem > 0 ? `Sisa: Rp ${rem.toLocaleString('id-ID')}` : (target > 0 ? 'Target Tercapai!' : 'Belum ada target');
+                }
+            });
+
+            const currentDebt = state.history[currentMonthStr].debt || 0;
+            const netWorth = globalGrossAssets - currentDebt;
+            state.history[currentMonthStr].netWorth = netWorth;
+            
+            // 2. Update Header Overview DOM
+            document.getElementById('lbl-total-assets').textContent = `Rp ${Math.round(globalGrossAssets).toLocaleString('id-ID')}`;
+            
+            const nwEl = document.getElementById('global-net-worth');
+            nwEl.textContent = `Rp ${Math.round(netWorth).toLocaleString('id-ID')}`;
+            nwEl.className = `font-display text-4xl md:text-5xl font-bold tracking-tight mb-8 mask-data ${netWorth < 0 ? 'text-danger' : ''}`;
+
+            const debtInput = document.getElementById('input-debt');
+            if (document.activeElement !== debtInput) {
+                debtInput.value = currentDebt === 0 ? '' : currentDebt.toLocaleString('id-ID');
+            }
+
+            document.getElementById('last-updated-lbl').innerHTML = `Updated: ${formatTimestamp(state.history[currentMonthStr].lastUpdated)}`;
+            
+            // 3. Update Recap UI
+            const recapContainer = document.getElementById('recap-container');
+            recapContainer.innerHTML = '';
+            if (Object.keys(recapData).length === 0) {
+                recapContainer.innerHTML = '<div class="col-span-2 text-center text-sm text-slate-500 py-4">Belum ada aset bulan ini.</div>';
+            } else {
+                for (const [unit, totalVal] of Object.entries(recapData)) {
+                    if (totalVal > 0) {
+                        recapContainer.innerHTML += `
+                            <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 flex flex-col gap-1">
+                                <div class="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1.5 truncate">
+                                    <i data-lucide="${ICONS[unit] || 'circle-dollar-sign'}" class="w-3.5 h-3.5 text-accent"></i> ${unit}
+                                </div>
+                                <div class="font-display font-bold text-sm mask-data text-slate-800 dark:text-slate-200">
+                                    Rp ${Math.round(totalVal).toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // 4. Update Health Score UI
+            // Debt Ratio
+            let debtRatio = globalGrossAssets > 0 ? (currentDebt / globalGrossAssets) * 100 : (currentDebt > 0 ? 100 : 0);
+            document.getElementById('health-debt-txt').textContent = `${debtRatio.toFixed(1)}%`;
+            
+            const debtBar = document.getElementById('health-debt-bar');
+            const debtBadge = document.getElementById('health-debt-badge');
+            debtBar.style.width = `${Math.min(debtRatio, 100)}%`;
+            
+            if (debtRatio <= 30) {
+                debtBar.className = "h-full transition-all duration-500 rounded-full bg-success";
+                debtBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+                debtBadge.textContent = "Aman";
+            } else if (debtRatio <= 50) {
+                debtBar.className = "h-full transition-all duration-500 rounded-full bg-warning";
+                debtBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+                debtBadge.textContent = "Waspada";
+            } else {
+                debtBar.className = "h-full transition-all duration-500 rounded-full bg-danger";
+                debtBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+                debtBadge.textContent = "Bahaya";
+            }
+
+            // Diversification
+            let diversCount = Object.keys(recapData).length;
+            document.getElementById('health-div-txt').textContent = `${diversCount} Kategori`;
+            const divBadge = document.getElementById('health-div-badge');
+            
+            if(diversCount >= 4) {
+                divBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+                divBadge.textContent = "Sangat Baik";
+            } else if (diversCount >= 2) {
+                divBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+                divBadge.textContent = "Cukup";
+            } else {
+                divBadge.className = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400";
+                divBadge.textContent = "Kurang";
+            }
+
+            // Render diversification steps bar (max 5 visually)
+            let stepsHTML = '';
+            for(let i=1; i<=5; i++) {
+                let bgClass = i <= diversCount ? (diversCount >= 4 ? 'bg-success' : 'bg-warning') : 'bg-slate-200 dark:bg-slate-700';
+                if(diversCount < 2 && i <= diversCount) bgClass = 'bg-slate-400';
+                stepsHTML += `<div class="flex-1 rounded-full ${bgClass} transition-colors duration-300"></div>`;
+            }
+            document.getElementById('health-div-steps').innerHTML = stepsHTML;
+
+            window.lucide.createIcons();
+            renderTrendChart();
+        };
+
+        window.toggleCollapse = (gIdx) => {
+            state.history[currentMonthStr].goals[gIdx].collapsed = !state.history[currentMonthStr].goals[gIdx].collapsed;
+            const card = document.getElementById(`goal-card-${gIdx}`);
+            state.history[currentMonthStr].goals[gIdx].collapsed ? card.classList.add('is-collapsed') : card.classList.remove('is-collapsed');
+            saveSilent();
+        };
+
+        const renderUI = () => {
+            const container = document.getElementById('goals-container');
+            container.innerHTML = '';
+            const currentGoals = state.history[currentMonthStr].goals;
+
+            currentGoals.forEach((goal, gIdx) => {
+                const card = document.createElement('div');
+                card.className = `glass flex flex-col ${goal.collapsed ? 'is-collapsed' : ''}`;
+                card.id = `goal-card-${gIdx}`;
+                
+                // Asset List Builder
+                let assetsHTML = goal.assets.length === 0 
+                    ? `<div class="text-center py-6 text-xs text-slate-400 italic">Belum ada aset ditambahkan.</div>`
+                    : `<div class="flex flex-col gap-2 mt-4">` + goal.assets.map((a, aIdx) => {
+                        const formatVal = a.unit.includes('IDR') ? (a.amount ? a.amount.toLocaleString('id-ID') : '') : (a.amount || '');
+                        return `
+                        <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 p-2.5 rounded-xl group hover:border-accent/50 transition-colors">
+                            <!-- Icon -->
+                            <div class="w-10 h-10 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-accent shrink-0 shadow-sm">
+                                <i data-lucide="${ICONS[a.unit] || 'circle-dollar-sign'}" class="w-5 h-5"></i>
+                            </div>
+                            
+                            <!-- Inputs Row -->
+                            <div class="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
+                                <input class="asset-name bg-transparent border-none outline-none text-sm font-semibold text-slate-800 dark:text-slate-200 placeholder:text-slate-400 w-full sm:w-1/3" type="text" value="${a.name}" placeholder="Nama Aset..." data-gidx="${gIdx}" data-aidx="${aIdx}">
+                                
+                                <div class="flex-1 flex items-center gap-2 bg-white dark:bg-slate-900/50 rounded-lg p-1 border border-slate-200 dark:border-slate-700/50">
+                                    <input class="asset-amount mask-data bg-transparent border-none outline-none font-display font-bold text-success text-sm px-2 w-full text-right" type="text" inputmode="${a.unit.includes('IDR') ? 'numeric' : 'decimal'}" value="${formatVal}" placeholder="0" data-gidx="${gIdx}" data-aidx="${aIdx}" data-unit="${a.unit}">
+                                    
+                                    <div class="w-[1px] h-4 bg-slate-300 dark:bg-slate-600"></div>
+                                    
+                                    <select class="asset-unit bg-transparent border-none outline-none text-[10px] font-semibold text-slate-500 cursor-pointer pl-1 pr-0 appearance-none text-center max-w-[80px]" data-gidx="${gIdx}" data-aidx="${aIdx}">
+                                        ${UNITS.map(u => `<option value="${u}" ${a.unit === u ? 'selected' : ''} class="bg-white dark:bg-slate-800 text-slate-800 dark:text-white">${u}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Delete btn -->
+                            <button class="btn-del-asset shrink-0 w-8 h-8 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 dark:bg-red-900/20 dark:hover:bg-red-900/40 flex items-center justify-center transition-colors" data-gidx="${gIdx}" data-aidx="${aIdx}" title="Hapus Aset">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="text-[10px] text-right text-slate-400 font-display -mt-1 mask-data pr-12" id="equiv-${gIdx}-${aIdx}"></div>
+                        `;
+                    }).join('') + `</div>`;
+
+                // Main Card Layout
+                card.innerHTML = `
+                    <!-- Header (Always visible) -->
+                    <div class="p-4 sm:p-5 cursor-pointer flex flex-col gap-3" onclick="window.toggleCollapse(${gIdx})">
+                        <div class="flex justify-between items-start gap-4">
+                            <div class="flex-1 min-w-0" onclick="event.stopPropagation()">
+                                <input class="goal-title-input w-full bg-transparent border-none outline-none font-display text-xl sm:text-2xl font-bold text-slate-800 dark:text-white placeholder:text-slate-400 mb-1 focus:ring-0 p-0" value="${goal.name}" placeholder="Tujuan Tabungan">
+                                
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Target:</span>
+                                    <div class="flex items-center text-sm font-display font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/50 focus-within:border-accent">
+                                        <span>Rp</span>
+                                        <input type="text" inputmode="numeric" class="goal-target-input mask-data bg-transparent border-none outline-none w-24 sm:w-32 ml-1" value="${goal.target ? goal.target.toLocaleString('id-ID') : ''}" placeholder="0">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="collapse-icon p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-transform duration-300">
+                                <i data-lucide="chevron-up"></i>
+                            </button>
+                        </div>
+
+                        <!-- Progress Bar (Always visible) -->
+                        <div class="w-full">
+                            <div class="flex justify-between text-xs mb-1.5 font-bold font-display">
+                                <span class="text-slate-500 mask-data" id="txt-coll-${gIdx}">Terkumpul: Rp 0</span>
+                                <span class="text-accent" id="txt-pct-${gIdx}">0%</span>
+                            </div>
+                            <div class="h-2.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-accent to-indigo-500 transition-all duration-500 rounded-full" id="prog-main-${gIdx}" style="width: 0%;"></div>
+                            </div>
+                            <div class="text-[10px] text-right mt-1 text-slate-400 font-semibold mask-data" id="txt-rem-${gIdx}"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Body (Collapsible) -->
+                    <div class="goal-body px-4 sm:px-5 pb-5">
+                        <div class="border-t border-slate-200 dark:border-slate-700/50 pt-4 mt-2">
+                            <div class="flex justify-between items-center">
+                                <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                                    <i data-lucide="layers" class="w-4 h-4"></i> Rincian Aset
+                                </div>
+                                <button class="btn-del-goal text-red-400 hover:text-red-500 p-1" data-gidx="${gIdx}" title="Hapus Kantong Tabungan">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            
+                            ${assetsHTML}
+
+                            <button class="btn-add-asset mt-3 w-full py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2" data-gidx="${gIdx}">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Tambah Item Aset
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // Bind Listeners for this Goal
+                card.querySelector('.goal-title-input').addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].name = e.target.value; saveAndRender(); });
+                attachRealtimeFormat(card.querySelector('.goal-target-input'), (v) => { state.history[currentMonthStr].goals[gIdx].target = v; }, 'TARGET');
+
+                card.querySelectorAll('.asset-name').forEach(el => el.addEventListener('blur', e => { state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].name = e.target.value; saveAndRender(); }));
+                
+                card.querySelectorAll('.asset-unit').forEach(el => {
+                    el.addEventListener('change', e => { 
+                        state.history[currentMonthStr].goals[gIdx].assets[e.target.dataset.aidx].unit = e.target.value; 
+                        saveAndRender(); 
+                    });
+                });
+                
+                card.querySelectorAll('.asset-amount').forEach(el => {
+                    attachRealtimeFormat(el, (v) => { state.history[currentMonthStr].goals[gIdx].assets[el.dataset.aidx].amount = v; }, el.dataset.unit);
+                });
+
+                card.querySelector('.btn-del-goal').addEventListener('click', (e) => {
+                    e.stopPropagation(); if(confirm('Yakin ingin menghapus kantong tabungan ini secara permanen?')) { state.history[currentMonthStr].goals.splice(gIdx, 1); saveAndRender(); }
+                });
+                card.querySelector('.btn-add-asset').addEventListener('click', () => {
+                    state.history[currentMonthStr].goals[gIdx].assets.push({ id: Date.now(), name: '', unit: 'IDR / Tabungan', amount: 0 }); saveAndRender();
+                });
+                card.querySelectorAll('.btn-del-asset').forEach(el => el.addEventListener('click', e => {
+                    state.history[currentMonthStr].goals[gIdx].assets.splice(e.currentTarget.dataset.aidx, 1); saveAndRender();
+                }));
+            });
+
+            window.lucide.createIcons();
+            updateDynamicValues(); 
+        };
+
+        // Add New Goal
+        document.getElementById('btn-add-goal').addEventListener('click', () => {
+            state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
+            saveAndRender();
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+        });
+
+        // Initialize
+        loadLocalData();
+        renderUI();
+        fetchLiveRates();
+    </script>
 </body>
 </html>

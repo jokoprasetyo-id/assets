@@ -319,7 +319,7 @@
   </div>
 </div>
 
-<!-- Modal Atur Anggaran (Baru) -->
+<!-- Modal Atur Anggaran -->
 <div id="budget-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none smooth-transition p-4">
   <div class="bg-card border-2 border-card rounded-[2rem] w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="budget-box">
     <div class="p-5 border-b-2 border-slate-200 dark:border-slate-700 flex justify-between items-center bg-orange-50 dark:bg-orange-900/20 rounded-t-[2rem] shrink-0">
@@ -397,7 +397,7 @@
         </div>
       </div>
 
-      <!-- Kategori Custom (Ringkas) -->
+      <!-- Kategori Custom -->
       <div>
         <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2"><i data-lucide="tags" class="w-4 h-4"></i> Kelola Kategori Kustom</div>
         <div class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-4">
@@ -484,6 +484,8 @@
   let syncListener = null;
   let editingTxId = null; 
   let editingTxType = null; 
+  let editingBudgetCatId = null; // Fix untuk track edit budget kategori
+  let editingCustomCat = null; // Fix untuk track edit kategori kustom
 
   // Konfigurasi Kategori Transaksi (Hardcoded)
   const TX_CATEGORIES = {
@@ -571,6 +573,7 @@
     return `Rp ${Math.round(val).toLocaleString('id-ID')}`;
   };
 
+  // [FIX BUG 1] Ensure that debts array always exist gracefully
   const ensureMonthDataExists = (monthStr) => {
     if (!state.history[monthStr]) {
       const pastMonths = Object.keys(state.history).filter(m => m < monthStr).sort().reverse();
@@ -585,9 +588,12 @@
       state.history[monthStr] = { lastUpdated: Date.now(), netWorth: 0, debts: clonedDebts, goals: clonedGoals, incomes: [], expenses: [], budgets: clonedBudgets };
     }
     
+    // Safely enforce structures for older unmigrated data
     if (!state.history[monthStr].incomes) state.history[monthStr].incomes = [];
     if (!state.history[monthStr].expenses) state.history[monthStr].expenses = [];
     if (!state.history[monthStr].budgets) state.history[monthStr].budgets = {}; 
+    if (!state.history[monthStr].debts) state.history[monthStr].debts = [];
+    if (!state.history[monthStr].goals) state.history[monthStr].goals = [];
     if (!state.customCategories) state.customCategories = { income: [], expense: [] };
   };
 
@@ -625,16 +631,36 @@
       const items = state.customCategories[type] || [];
       items.forEach((cat, idx) => {
         listContainer.innerHTML += `
-        <div class="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 rounded-lg">
+        <div class="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 rounded-lg group hover:border-brand-300 dark:hover:border-brand-500/50 transition">
           <div class="flex items-center gap-2">
             <i data-lucide="${cat.icon}" class="w-4 h-4 text-slate-500"></i>
             <span class="text-xs font-semibold">${cat.name}</span>
             <span class="text-[9px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">${type === 'expense' ? 'Keluar' : 'Masuk'}</span>
           </div>
-          <button class="btn-del-custom-cat text-red-400 hover:text-red-600 transition" data-type="${type}" data-idx="${idx}">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
+          <div class="flex gap-1">
+            <button class="btn-edit-custom-cat p-1 text-slate-400 hover:text-brand-500 transition" data-type="${type}" data-idx="${idx}" title="Edit Kategori">
+              <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button class="btn-del-custom-cat p-1 text-slate-400 hover:text-red-500 transition" data-type="${type}" data-idx="${idx}" title="Hapus Kategori">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>`;
+      });
+    });
+
+    document.querySelectorAll('.btn-edit-custom-cat').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const type = e.currentTarget.dataset.type;
+        const idx = e.currentTarget.dataset.idx;
+        const cat = state.customCategories[type][idx];
+        
+        document.getElementById('custom-cat-type').value = type;
+        document.getElementById('custom-cat-name').value = cat.name;
+        document.getElementById('btn-add-custom-cat').innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+        editingCustomCat = { type, idx };
+        document.getElementById('custom-cat-name').focus();
+        window.lucide.createIcons();
       });
     });
 
@@ -655,18 +681,32 @@
   document.getElementById('btn-add-custom-cat').addEventListener('click', () => {
     const type = document.getElementById('custom-cat-type').value;
     const name = document.getElementById('custom-cat-name').value.trim();
-    const icon = type === 'expense' ? 'tag' : 'tags'; // Default icon
     
     if(!name) return;
-    
     if(!state.customCategories) state.customCategories = { income: [], expense: [] };
-    state.customCategories[type].push({ id: `custom_${Date.now()}`, name, icon });
+    
+    if (editingCustomCat) {
+      if (editingCustomCat.type === type) {
+          state.customCategories[type][editingCustomCat.idx].name = name;
+      } else {
+          const oldCat = state.customCategories[editingCustomCat.type].splice(editingCustomCat.idx, 1)[0];
+          oldCat.name = name;
+          oldCat.icon = type === 'expense' ? 'tag' : 'tags';
+          state.customCategories[type].push(oldCat);
+      }
+      editingCustomCat = null;
+      document.getElementById('btn-add-custom-cat').innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i>';
+    } else {
+      const icon = type === 'expense' ? 'tag' : 'tags'; 
+      state.customCategories[type].push({ id: `custom_${Date.now()}`, name, icon });
+    }
     
     document.getElementById('custom-cat-name').value = '';
     saveSilent(); renderCustomCatList();
     if(document.getElementById('budget-modal').classList.contains('opacity-0') === false) {
        renderBudgetModalUI(); // refresh if modal open
     }
+    window.lucide.createIcons();
   });
 
   // Tab Navigation Logic
@@ -838,6 +878,13 @@
   document.getElementById('btn-open-budget-modal').addEventListener('click', () => { 
     budgetModal.classList.remove('opacity-0', 'pointer-events-none'); 
     budgetBox.classList.remove('scale-95'); 
+    
+    // Reset Form Input Edit Budget State
+    document.getElementById('budget-input-cat').value = '';
+    document.getElementById('budget-input-amount').value = '';
+    editingBudgetCatId = null;
+    document.getElementById('btn-save-budget').textContent = "Simpan";
+    
     renderBudgetModalUI(); 
   });
   
@@ -848,21 +895,28 @@
 
   const renderBudgetModalUI = () => {
     const container = document.getElementById('budget-list-container'); 
-    const catSelect = document.getElementById('budget-input-cat');
+    const budgetCatSelect = document.getElementById('budget-input-cat');
     
     container.innerHTML = '';
-    catSelect.innerHTML = '<option value="" disabled selected>Pilih Kategori Pengeluaran...</option>';
+    budgetCatSelect.innerHTML = '<option value="" disabled selected>Pilih Kategori Pengeluaran...</option>';
     
     const currentBudgets = state.history[currentMonthStr].budgets || {};
     const expenseCategories = getAllCategories('expense');
     
-    // Populate dropdown with all expense categories
+    // Populate dropdown with all active expense categories
     expenseCategories.forEach(cat => {
-      catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+      budgetCatSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
     });
 
-    // Render list of active budgets
+    // Cek bilamana ada budget di history tetapi kategorinya dihapus/hilang setelah tersinkron. 
+    // Kita tetap inject ke opsi Select agar tetap bisa diedit/dihapus dengan aman (Fix BUG 2 Edge Case).
     const budgetedCats = Object.keys(currentBudgets).filter(k => currentBudgets[k] > 0);
+    budgetedCats.forEach(catId => {
+      if (!expenseCategories.find(c => c.id === catId)) {
+        const fallback = getCatDetails('expense', catId);
+        budgetCatSelect.innerHTML += `<option value="${catId}">${fallback.name} (Tidak Aktif)</option>`;
+      }
+    });
 
     if (budgetedCats.length === 0) {
       container.innerHTML = `<div class="text-center py-6 text-xs text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">Belum ada anggaran yang diatur.<br>Silakan tambah melalui form di atas.</div>`;
@@ -884,20 +938,23 @@
             </div>
           </div>
           <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-            <button class="btn-edit-budget p-1.5 text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition" data-cat="${catId}" data-amount="${amount}" title="Edit Nominal"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+            <button class="btn-edit-budget p-1.5 text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-lg transition" data-cat="${catId}" data-amount="${amount}" title="Edit Kategori / Nominal"><i data-lucide="pencil" class="w-4 h-4"></i></button>
             <button class="btn-del-budget p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition" data-cat="${catId}" title="Hapus Anggaran"><i data-lucide="trash" class="w-4 h-4"></i></button>
           </div>
         </div>`;
       });
     }
 
-    // Bind Edit Button
+    // Bind Edit Button - (Fix BUG 2 Track Edit State)
     document.querySelectorAll('.btn-edit-budget').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const catId = e.currentTarget.dataset.cat;
         const amount = e.currentTarget.dataset.amount;
         document.getElementById('budget-input-cat').value = catId;
         document.getElementById('budget-input-amount').value = parseInt(amount, 10).toLocaleString('id-ID');
+        
+        editingBudgetCatId = catId; // Tandai sedang mengedit kategori tertentu
+        document.getElementById('btn-save-budget').textContent = "Update";
         document.getElementById('budget-input-amount').focus();
       });
     });
@@ -917,6 +974,7 @@
 
   attachRealtimeFormat(document.getElementById('budget-input-amount'), () => {}, false);
 
+  // Fix BUG 2 logic in saving budget changes
   document.getElementById('btn-save-budget').addEventListener('click', () => {
     const catId = document.getElementById('budget-input-cat').value;
     const amountStr = document.getElementById('budget-input-amount').value.replace(/\D/g, '');
@@ -926,12 +984,20 @@
     if(amount <= 0) { customAlert("Nominal anggaran harus lebih dari Rp 0."); return; }
 
     if(!state.history[currentMonthStr].budgets) state.history[currentMonthStr].budgets = {};
+
+    // Jika mengedit, dan mengubah ke Kategori lain, hapus rekam jejak budget lama agar tidak ganda.
+    if (editingBudgetCatId && editingBudgetCatId !== catId) {
+      delete state.history[currentMonthStr].budgets[editingBudgetCatId];
+    }
+
     state.history[currentMonthStr].budgets[catId] = amount;
     state.history[currentMonthStr].lastUpdated = Date.now();
 
     // Reset Form
     document.getElementById('budget-input-cat').value = '';
     document.getElementById('budget-input-amount').value = '';
+    editingBudgetCatId = null;
+    document.getElementById('btn-save-budget').textContent = "Simpan";
 
     saveSilent(); updateDynamicValues(); renderBudgetModalUI();
   });
@@ -1385,7 +1451,14 @@
   const debtModal = document.getElementById('debt-modal'); const debtBox = document.getElementById('debt-box');
   document.getElementById('btn-open-debt-modal').addEventListener('click', () => { debtModal.classList.remove('opacity-0', 'pointer-events-none'); debtBox.classList.remove('scale-95'); renderDebtModalUI(); });
   document.getElementById('btn-close-debt').addEventListener('click', () => { debtModal.classList.add('opacity-0', 'pointer-events-none'); debtBox.classList.add('scale-95'); });
-  document.getElementById('btn-add-debt-item').addEventListener('click', () => { state.history[currentMonthStr].debts.push({ id: Date.now(), name: '', amount: 0 }); state.history[currentMonthStr].lastUpdated = Date.now(); saveSilent(); renderDebtModalUI(); updateDynamicValues(); });
+  
+  // [FIX BUG 1] Check if `debts` exists before pushing
+  document.getElementById('btn-add-debt-item').addEventListener('click', () => { 
+    if (!state.history[currentMonthStr].debts) state.history[currentMonthStr].debts = [];
+    state.history[currentMonthStr].debts.push({ id: Date.now(), name: '', amount: 0 }); 
+    state.history[currentMonthStr].lastUpdated = Date.now(); 
+    saveSilent(); renderDebtModalUI(); updateDynamicValues(); 
+  });
 
   const renderDebtModalUI = () => {
     const container = document.getElementById('debt-list-container'); container.innerHTML = '';

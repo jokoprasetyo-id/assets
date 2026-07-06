@@ -484,8 +484,8 @@
   let syncListener = null;
   let editingTxId = null; 
   let editingTxType = null; 
-  let editingBudgetCatId = null; // Fix untuk track edit budget kategori
-  let editingCustomCat = null; // Fix untuk track edit kategori kustom
+  let editingBudgetCatId = null; 
+  let editingCustomCat = null; 
 
   // Konfigurasi Kategori Transaksi (Hardcoded)
   const TX_CATEGORIES = {
@@ -573,10 +573,16 @@
     return `Rp ${Math.round(val).toLocaleString('id-ID')}`;
   };
 
-  // [FIX BUG 1] Ensure that debts array always exist gracefully
+  // [FIX] Utility untuk memastikan nilai selalu berbentuk Array dan membuang corrupted object Firebase
+  const ensureArray = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data.filter(Boolean);
+    return Object.values(data).filter(Boolean);
+  };
+
   const ensureMonthDataExists = (monthStr) => {
     if (!state.history[monthStr]) {
-      const pastMonths = Object.keys(state.history).filter(m => m < monthStr).sort().reverse();
+      const pastMonths = Object.keys(state.history).filter(m => m.match(/^\d{4}-\d{2}$/) && m < monthStr).sort().reverse();
       let clonedGoals = []; let clonedDebts = []; let clonedBudgets = {};
       if (pastMonths.length > 0) {
         clonedGoals = JSON.parse(JSON.stringify(state.history[pastMonths[0]].goals || []));
@@ -588,14 +594,36 @@
       state.history[monthStr] = { lastUpdated: Date.now(), netWorth: 0, debts: clonedDebts, goals: clonedGoals, incomes: [], expenses: [], budgets: clonedBudgets };
     }
     
-    // Safely enforce structures for older unmigrated data
-    if (!state.history[monthStr].incomes) state.history[monthStr].incomes = [];
-    if (!state.history[monthStr].expenses) state.history[monthStr].expenses = [];
+    // [FIX] Proteksi mendalam menggunakan ensureArray untuk mencegah TypeError saat sync Firestore
+    state.history[monthStr].incomes = ensureArray(state.history[monthStr].incomes);
+    state.history[monthStr].expenses = ensureArray(state.history[monthStr].expenses);
+    state.history[monthStr].debts = ensureArray(state.history[monthStr].debts);
+    state.history[monthStr].goals = ensureArray(state.history[monthStr].goals);
+
+    state.history[monthStr].goals.forEach(g => {
+        g.assets = ensureArray(g.assets);
+    });
+
     if (!state.history[monthStr].budgets) state.history[monthStr].budgets = {}; 
-    if (!state.history[monthStr].debts) state.history[monthStr].debts = [];
-    if (!state.history[monthStr].goals) state.history[monthStr].goals = [];
     if (!state.customCategories) state.customCategories = { income: [], expense: [] };
+    state.customCategories.income = ensureArray(state.customCategories.income);
+    state.customCategories.expense = ensureArray(state.customCategories.expense);
   };
+
+  // [FIX] Mencegah Race Condition Cloud Sync (Server Echo) dengan Debounce
+  let fbSaveTimeout = null;
+  const saveSilentLocalOnly = () => localStorage.setItem('liquid_assets_final', JSON.stringify(state));
+  const saveToFB = async () => { if (!currentUser) return; try { await setDoc(doc(db, 'liquid_assets_users', currentUser.uid), { state: state }, { merge: true }); } catch(e) {} };
+  
+  const saveSilent = () => { 
+    saveSilentLocalOnly(); 
+    if (fbSaveTimeout) clearTimeout(fbSaveTimeout);
+    // Jeda 800ms sebelum nge-push ke cloud supaya input yang sedang diketik tidak tertimpa/hilang
+    fbSaveTimeout = setTimeout(() => {
+        saveToFB();
+    }, 800);
+  };
+  const saveAndRender = () => { state.history[currentMonthStr].lastUpdated = Date.now(); saveSilent(); renderUI(); };
 
   const loadLocalData = () => {
     const saved = localStorage.getItem('liquid_assets_final');
@@ -617,12 +645,6 @@
     document.getElementById('theme-icon').setAttribute('data-lucide', state.theme === 'dark' ? 'sun' : 'moon');
   };
 
-  const saveSilentLocalOnly = () => localStorage.setItem('liquid_assets_final', JSON.stringify(state));
-  const saveToFB = async () => { if (!currentUser) return; try { await setDoc(doc(db, 'liquid_assets_users', currentUser.uid), { state: state }, { merge: true }); } catch(e) {} };
-  const saveSilent = () => { saveSilentLocalOnly(); saveToFB(); };
-  const saveAndRender = () => { state.history[currentMonthStr].lastUpdated = Date.now(); saveSilent(); renderUI(); };
-
-  // Logic Pengelolaan Kategori Custom (Ringkas)
   const renderCustomCatList = () => {
     const listContainer = document.getElementById('custom-cat-list');
     listContainer.innerHTML = '';
@@ -671,93 +693,12 @@
         state.customCategories[type].splice(idx, 1);
         saveSilent(); renderCustomCatList();
         if(document.getElementById('budget-modal').classList.contains('opacity-0') === false) {
-           renderBudgetModalUI(); // refresh if modal open
+           renderBudgetModalUI(); 
         }
       });
     });
     window.lucide.createIcons();
   };
-
-  document.getElementById('btn-add-custom-cat').addEventListener('click', () => {
-    const type = document.getElementById('custom-cat-type').value;
-    const name = document.getElementById('custom-cat-name').value.trim();
-    
-    if(!name) return;
-    if(!state.customCategories) state.customCategories = { income: [], expense: [] };
-    
-    if (editingCustomCat) {
-      if (editingCustomCat.type === type) {
-          state.customCategories[type][editingCustomCat.idx].name = name;
-      } else {
-          const oldCat = state.customCategories[editingCustomCat.type].splice(editingCustomCat.idx, 1)[0];
-          oldCat.name = name;
-          oldCat.icon = type === 'expense' ? 'tag' : 'tags';
-          state.customCategories[type].push(oldCat);
-      }
-      editingCustomCat = null;
-      document.getElementById('btn-add-custom-cat').innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i>';
-    } else {
-      const icon = type === 'expense' ? 'tag' : 'tags'; 
-      state.customCategories[type].push({ id: `custom_${Date.now()}`, name, icon });
-    }
-    
-    document.getElementById('custom-cat-name').value = '';
-    saveSilent(); renderCustomCatList();
-    if(document.getElementById('budget-modal').classList.contains('opacity-0') === false) {
-       renderBudgetModalUI(); // refresh if modal open
-    }
-    window.lucide.createIcons();
-  });
-
-  // Tab Navigation Logic
-  const tabAssetBtn = document.getElementById('nav-tab-asset');
-  const tabCashflowBtn = document.getElementById('nav-tab-cashflow');
-  const viewAsset = document.getElementById('view-asset');
-  const viewCashflow = document.getElementById('view-cashflow');
-
-  const switchRightTab = (tab) => {
-    activeRightTab = tab;
-    if(tab === 'asset') {
-      tabAssetBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400 smooth-transition flex items-center justify-center gap-2 shadow-sm";
-      tabCashflowBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 smooth-transition flex items-center justify-center gap-2";
-      viewAsset.classList.remove('hidden'); viewAsset.classList.add('flex');
-      viewCashflow.classList.add('hidden'); viewCashflow.classList.remove('flex');
-    } else {
-      tabCashflowBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 smooth-transition flex items-center justify-center gap-2 shadow-sm";
-      tabAssetBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 smooth-transition flex items-center justify-center gap-2";
-      viewCashflow.classList.remove('hidden'); viewCashflow.classList.add('flex');
-      viewAsset.classList.add('hidden'); viewAsset.classList.remove('flex');
-      renderCashflowView();
-    }
-  };
-
-  tabAssetBtn.addEventListener('click', () => switchRightTab('asset'));
-  tabCashflowBtn.addEventListener('click', () => switchRightTab('cashflow'));
-  document.getElementById('btn-switch-cashflow-tab').addEventListener('click', () => {
-    switchRightTab('cashflow'); window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  // Global Actions
-  document.getElementById('month-filter').addEventListener('change', (e) => {
-    if (!e.target.value) return; currentMonthStr = e.target.value;
-    ensureMonthDataExists(currentMonthStr); saveAndRender();
-  });
-
-  document.getElementById('btn-theme').addEventListener('click', () => {
-    state.theme = state.theme === 'light' ? 'dark' : 'light';
-    applyTheme(); window.lucide.createIcons(); renderTrendChart(); saveSilent();
-  });
-
-  document.getElementById('btn-privacy').addEventListener('click', () => {
-    state.privacy = !state.privacy;
-    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}" class="w-5 h-5 text-brand-500"></i>`;
-    window.lucide.createIcons(); renderUI(); saveSilent(); renderDebtModalUI(); 
-    if(!document.getElementById('budget-modal').classList.contains('opacity-0')) renderBudgetModalUI();
-  });
-
-  document.getElementById('chart-data-type').addEventListener('change', (e) => {
-    state.chartType = e.target.value; renderTrendChart(); saveSilent();
-  });
 
   const attachRealtimeFormat = (inputEl, updateCallback, isDecimal = false) => {
     inputEl.addEventListener('input', function() {
@@ -779,12 +720,8 @@
     });
   };
 
-  const txModal = document.getElementById('tx-modal');
-  const txBox = document.getElementById('tx-box');
-  const catSelect = document.getElementById('tx-input-category');
-  let activeTxType = 'expense';
-
   const populateCategories = (type) => {
+    const catSelect = document.getElementById('tx-input-category');
     catSelect.innerHTML = '';
     const allCats = getAllCategories(type);
     allCats.forEach(cat => {
@@ -808,90 +745,10 @@
     populateCategories(type);
   };
 
-  document.getElementById('tx-type-income').addEventListener('click', () => switchTxType('income'));
-  document.getElementById('tx-type-expense').addEventListener('click', () => switchTxType('expense'));
-
-  document.getElementById('fab-add-tx').addEventListener('click', () => {
-    editingTxId = null; 
-    document.getElementById('tx-modal-title').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-brand-500"></i> Catat Transaksi`;
-    document.getElementById('btn-save-tx').textContent = "Simpan Transaksi";
-    
-    document.getElementById('tx-input-name').value = '';
-    document.getElementById('tx-input-amount').value = '';
-    switchTxType('expense'); 
-    
-    txModal.classList.remove('opacity-0', 'pointer-events-none');
-    txBox.classList.remove('scale-95');
-    setTimeout(() => document.getElementById('tx-input-amount').focus(), 100);
-    window.lucide.createIcons();
-  });
-
-  const closeTxModal = () => { txModal.classList.add('opacity-0', 'pointer-events-none'); txBox.classList.add('scale-95'); };
-  document.getElementById('btn-close-tx').addEventListener('click', closeTxModal);
-
-  attachRealtimeFormat(document.getElementById('tx-input-amount'), () => {}, false);
-
-  document.getElementById('btn-save-tx').addEventListener('click', () => {
-    const name = document.getElementById('tx-input-name').value.trim();
-    const amountStr = document.getElementById('tx-input-amount').value.replace(/\D/g, '');
-    const amount = amountStr ? parseInt(amountStr, 10) : 0;
-    const category = catSelect.value;
-    
-    const finalName = name || getCatDetails(activeTxType, category).name;
-
-    if(amount <= 0) { customAlert("Mohon isi nominal dengan benar."); return; }
-
-    if (editingTxId) {
-      const isTypeChanged = (editingTxType !== activeTxType);
-      if (isTypeChanged) {
-        const oldArrName = editingTxType === 'income' ? 'incomes' : 'expenses';
-        const oldArr = state.history[currentMonthStr][oldArrName];
-        const oldIdx = oldArr.findIndex(t => t.id === editingTxId);
-        if(oldIdx > -1) oldArr.splice(oldIdx, 1);
-
-        const newArrName = activeTxType === 'income' ? 'incomes' : 'expenses';
-        state.history[currentMonthStr][newArrName].push({
-          id: editingTxId, name: finalName, amount: amount, category: category
-        });
-      } else {
-        const arrName = activeTxType === 'income' ? 'incomes' : 'expenses';
-        const arr = state.history[currentMonthStr][arrName];
-        const idx = arr.findIndex(t => t.id === editingTxId);
-        if (idx > -1) {
-          arr[idx].name = finalName; arr[idx].amount = amount; arr[idx].category = category;
-        }
-      }
-    } else {
-      const newItem = { id: Date.now(), name: finalName, amount: amount, category: category };
-      if(activeTxType === 'income') state.history[currentMonthStr].incomes.push(newItem);
-      else state.history[currentMonthStr].expenses.push(newItem);
-    }
-
-    state.history[currentMonthStr].lastUpdated = Date.now();
-    saveSilent(); closeTxModal(); renderUI(); 
-    if(activeRightTab !== 'cashflow') switchRightTab('cashflow');
-  });
-
-  const budgetModal = document.getElementById('budget-modal'); 
-  const budgetBox = document.getElementById('budget-box');
-
-  document.getElementById('btn-open-budget-modal').addEventListener('click', () => { 
-    budgetModal.classList.remove('opacity-0', 'pointer-events-none'); 
-    budgetBox.classList.remove('scale-95'); 
-    
-    // Reset Form Input Edit Budget State
-    document.getElementById('budget-input-cat').value = '';
-    document.getElementById('budget-input-amount').value = '';
-    editingBudgetCatId = null;
-    document.getElementById('btn-save-budget').textContent = "Simpan";
-    
-    renderBudgetModalUI(); 
-  });
-  
-  document.getElementById('btn-close-budget').addEventListener('click', () => { 
-    budgetModal.classList.add('opacity-0', 'pointer-events-none'); 
-    budgetBox.classList.add('scale-95'); 
-  });
+  const closeTxModal = () => { 
+      document.getElementById('tx-modal').classList.add('opacity-0', 'pointer-events-none'); 
+      document.getElementById('tx-box').classList.add('scale-95'); 
+  };
 
   const renderBudgetModalUI = () => {
     const container = document.getElementById('budget-list-container'); 
@@ -903,13 +760,10 @@
     const currentBudgets = state.history[currentMonthStr].budgets || {};
     const expenseCategories = getAllCategories('expense');
     
-    // Populate dropdown with all active expense categories
     expenseCategories.forEach(cat => {
       budgetCatSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
     });
 
-    // Cek bilamana ada budget di history tetapi kategorinya dihapus/hilang setelah tersinkron. 
-    // Kita tetap inject ke opsi Select agar tetap bisa diedit/dihapus dengan aman (Fix BUG 2 Edge Case).
     const budgetedCats = Object.keys(currentBudgets).filter(k => currentBudgets[k] > 0);
     budgetedCats.forEach(catId => {
       if (!expenseCategories.find(c => c.id === catId)) {
@@ -945,7 +799,6 @@
       });
     }
 
-    // Bind Edit Button - (Fix BUG 2 Track Edit State)
     document.querySelectorAll('.btn-edit-budget').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const catId = e.currentTarget.dataset.cat;
@@ -953,13 +806,12 @@
         document.getElementById('budget-input-cat').value = catId;
         document.getElementById('budget-input-amount').value = parseInt(amount, 10).toLocaleString('id-ID');
         
-        editingBudgetCatId = catId; // Tandai sedang mengedit kategori tertentu
+        editingBudgetCatId = catId; 
         document.getElementById('btn-save-budget').textContent = "Update";
         document.getElementById('budget-input-amount').focus();
       });
     });
 
-    // Bind Delete Button
     document.querySelectorAll('.btn-del-budget').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const catId = e.currentTarget.dataset.cat;
@@ -972,47 +824,15 @@
     window.lucide.createIcons();
   };
 
-  attachRealtimeFormat(document.getElementById('budget-input-amount'), () => {}, false);
-
-  // Fix BUG 2 logic in saving budget changes
-  document.getElementById('btn-save-budget').addEventListener('click', () => {
-    const catId = document.getElementById('budget-input-cat').value;
-    const amountStr = document.getElementById('budget-input-amount').value.replace(/\D/g, '');
-    const amount = amountStr ? parseInt(amountStr, 10) : 0;
-
-    if(!catId) { customAlert("Silakan pilih kategori pengeluaran terlebih dahulu."); return; }
-    if(amount <= 0) { customAlert("Nominal anggaran harus lebih dari Rp 0."); return; }
-
-    if(!state.history[currentMonthStr].budgets) state.history[currentMonthStr].budgets = {};
-
-    // Jika mengedit, dan mengubah ke Kategori lain, hapus rekam jejak budget lama agar tidak ganda.
-    if (editingBudgetCatId && editingBudgetCatId !== catId) {
-      delete state.history[currentMonthStr].budgets[editingBudgetCatId];
-    }
-
-    state.history[currentMonthStr].budgets[catId] = amount;
-    state.history[currentMonthStr].lastUpdated = Date.now();
-
-    // Reset Form
-    document.getElementById('budget-input-cat').value = '';
-    document.getElementById('budget-input-amount').value = '';
-    editingBudgetCatId = null;
-    document.getElementById('btn-save-budget').textContent = "Simpan";
-
-    saveSilent(); updateDynamicValues(); renderBudgetModalUI();
-  });
-
   const renderCashflowView = () => {
     const expenses = state.history[currentMonthStr].expenses || [];
     const incomes = state.history[currentMonthStr].incomes || [];
     const budgets = state.history[currentMonthStr].budgets || {};
     
-    // Kalkulasi Total Global
     let totalBudget = 0;
     Object.values(budgets).forEach(val => totalBudget += val);
     const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // Update Global Budget UI
     document.getElementById('budget-spent-lbl').textContent = renderMoney(totalSpent);
     document.getElementById('budget-total-lbl').textContent = totalBudget > 0 ? renderMoney(totalBudget) : 'Belum Diatur';
     
@@ -1028,7 +848,6 @@
       else globalBar.className = "h-full bg-red-500 transition-all duration-500";
     }
 
-    // Render Category Budgets
     const catContainer = document.getElementById('category-budgets-container');
     catContainer.innerHTML = '';
     
@@ -1084,14 +903,13 @@
       });
     }
 
-    // Render Timeline Transaksi
     const txContainer = document.getElementById('transaction-list');
     txContainer.innerHTML = '';
     
     let combined = [];
     incomes.forEach(i => combined.push({...i, type: 'in'}));
     expenses.forEach(e => combined.push({...e, type: 'out'}));
-    combined.sort((a, b) => b.id - a.id); // Descending
+    combined.sort((a, b) => b.id - a.id); 
     
     document.getElementById('tx-count-lbl').textContent = `${combined.length} Transaksi`;
 
@@ -1179,8 +997,8 @@
           const amountInput = document.getElementById('tx-input-amount');
           amountInput.value = txObj.amount.toLocaleString('id-ID');
           
-          txModal.classList.remove('opacity-0', 'pointer-events-none');
-          txBox.classList.remove('scale-95');
+          document.getElementById('tx-modal').classList.remove('opacity-0', 'pointer-events-none');
+          document.getElementById('tx-box').classList.remove('scale-95');
           window.lucide.createIcons();
         }
       });
@@ -1196,7 +1014,7 @@
 
     currentGoals.forEach((goal, gIdx) => {
       let goalTotalIDR = 0;
-      goal.assets.forEach((a, aIdx) => {
+      (goal.assets || []).forEach((a, aIdx) => {
         let unitKey = a.unit;
         const rate = EXCHANGE_RATES[unitKey] || 1;
         const idrVal = a.amount * rate;
@@ -1403,13 +1221,6 @@
     updateDynamicValues(); 
   };
 
-  document.getElementById('btn-add-goal').addEventListener('click', () => {
-    if (!state.history[currentMonthStr].goals) state.history[currentMonthStr].goals = [];
-    state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
-    saveAndRender();
-    setTimeout(() => { document.getElementById('view-asset').lastElementChild.previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 100);
-  });
-
   const renderTrendChart = () => {
     const ctx = document.getElementById('trendChart').getContext('2d');
     const months = Object.keys(state.history).sort();
@@ -1421,7 +1232,7 @@
     if(state.chartType === 'netWorth') {
       dataPoints = months.map(m => state.history[m].netWorth || 0);
     } else if(state.chartType === 'assets') {
-      dataPoints = months.map(m => { let ast = 0; (state.history[m].goals || []).forEach(g => g.assets.forEach(a => ast += a.amount * (EXCHANGE_RATES[a.unit] || 1))); return ast; });
+      dataPoints = months.map(m => { let ast = 0; (state.history[m].goals || []).forEach(g => (g.assets || []).forEach(a => ast += a.amount * (EXCHANGE_RATES[a.unit] || 1))); return ast; });
       lineColor = '#10b981'; bgColor = 'rgba(16, 185, 129, 0.1)';
     } else {
       dataPoints = months.map(m => (state.history[m].debts || []).reduce((sum, d) => sum + (d.amount || 0), 0));
@@ -1448,24 +1259,14 @@
     });
   };
 
-  const debtModal = document.getElementById('debt-modal'); const debtBox = document.getElementById('debt-box');
-  document.getElementById('btn-open-debt-modal').addEventListener('click', () => { debtModal.classList.remove('opacity-0', 'pointer-events-none'); debtBox.classList.remove('scale-95'); renderDebtModalUI(); });
-  document.getElementById('btn-close-debt').addEventListener('click', () => { debtModal.classList.add('opacity-0', 'pointer-events-none'); debtBox.classList.add('scale-95'); });
-  
-  // [FIX BUG 1] Check if `debts` exists before pushing
-  document.getElementById('btn-add-debt-item').addEventListener('click', () => { 
-    if (!state.history[currentMonthStr].debts) state.history[currentMonthStr].debts = [];
-    state.history[currentMonthStr].debts.push({ id: Date.now(), name: '', amount: 0 }); 
-    state.history[currentMonthStr].lastUpdated = Date.now(); 
-    saveSilent(); renderDebtModalUI(); updateDynamicValues(); 
-  });
-
   const renderDebtModalUI = () => {
     const container = document.getElementById('debt-list-container'); container.innerHTML = '';
     const currentDebts = state.history[currentMonthStr].debts || [];
+    
     if (currentDebts.length === 0) {
       container.innerHTML = `<div class="text-center py-8 text-sm text-slate-500 dark:text-slate-400 border-2 border-dashed border-red-200 dark:border-red-500/30 rounded-xl">Belum ada rincian hutang yang dicatat.<br>Klik tombol di bawah untuk menambahkan.</div>`; return;
     }
+
     currentDebts.forEach((debt, idx) => {
       let valStr = state.privacy ? (debt.amount ? '12345678' : '') : (debt.amount ? debt.amount.toLocaleString('id-ID') : '');
       let typeAttr = state.privacy ? 'password' : 'text'; 
@@ -1478,11 +1279,214 @@
         <button class="btn-del-debt-item p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg smooth-transition shrink-0 sm:self-center self-end" data-idx="${idx}" title="Hapus rincian ini"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
       </div>`;
     });
-    document.querySelectorAll('.modal-debt-name').forEach(el => { el.addEventListener('blur', e => { state.history[currentMonthStr].debts[e.target.dataset.idx].name = e.target.value; state.history[currentMonthStr].lastUpdated = Date.now(); saveSilent(); }); });
-    document.querySelectorAll('.modal-debt-amount').forEach(el => { attachRealtimeFormat(el, (v) => { state.history[currentMonthStr].debts[el.dataset.idx].amount = v; }, false); });
-    document.querySelectorAll('.btn-del-debt-item').forEach(el => { el.addEventListener('click', e => { const idx = e.currentTarget.dataset.idx; state.history[currentMonthStr].debts.splice(idx, 1); state.history[currentMonthStr].lastUpdated = Date.now(); saveSilent(); updateDynamicValues(); renderDebtModalUI(); }); });
+
+    // Event listener diamankan untuk mencegah TypeError apabila index bergeser
+    document.querySelectorAll('.modal-debt-name').forEach(el => { 
+      el.addEventListener('blur', e => { 
+        const idx = e.target.dataset.idx;
+        if(state.history[currentMonthStr].debts[idx]) {
+          state.history[currentMonthStr].debts[idx].name = e.target.value; 
+          state.history[currentMonthStr].lastUpdated = Date.now(); 
+          saveSilent(); 
+        }
+      }); 
+    });
+
+    document.querySelectorAll('.modal-debt-amount').forEach(el => { 
+      attachRealtimeFormat(el, (v) => { 
+        const idx = el.dataset.idx;
+        if(state.history[currentMonthStr].debts[idx]) {
+          state.history[currentMonthStr].debts[idx].amount = v; 
+        }
+      }, false); 
+    });
+
+    document.querySelectorAll('.btn-del-debt-item').forEach(el => { 
+      el.addEventListener('click', e => { 
+        const idx = e.currentTarget.dataset.idx; 
+        state.history[currentMonthStr].debts.splice(idx, 1); 
+        state.history[currentMonthStr].lastUpdated = Date.now(); 
+        saveSilent(); updateDynamicValues(); renderDebtModalUI(); 
+      }); 
+    });
+    
     window.lucide.createIcons();
   };
+
+  document.getElementById('btn-add-goal').addEventListener('click', () => {
+    if (!state.history[currentMonthStr].goals) state.history[currentMonthStr].goals = [];
+    state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
+    saveAndRender();
+    setTimeout(() => { document.getElementById('view-asset').lastElementChild.previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, 100);
+  });
+
+  const tabAssetBtn = document.getElementById('nav-tab-asset');
+  const tabCashflowBtn = document.getElementById('nav-tab-cashflow');
+  const viewAsset = document.getElementById('view-asset');
+  const viewCashflow = document.getElementById('view-cashflow');
+
+  const switchRightTab = (tab) => {
+    activeRightTab = tab;
+    if(tab === 'asset') {
+      tabAssetBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400 smooth-transition flex items-center justify-center gap-2 shadow-sm";
+      tabCashflowBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 smooth-transition flex items-center justify-center gap-2";
+      viewAsset.classList.remove('hidden'); viewAsset.classList.add('flex');
+      viewCashflow.classList.add('hidden'); viewCashflow.classList.remove('flex');
+    } else {
+      tabCashflowBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 smooth-transition flex items-center justify-center gap-2 shadow-sm";
+      tabAssetBtn.className = "flex-1 py-3 text-sm font-bold rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 smooth-transition flex items-center justify-center gap-2";
+      viewCashflow.classList.remove('hidden'); viewCashflow.classList.add('flex');
+      viewAsset.classList.add('hidden'); viewAsset.classList.remove('flex');
+      renderCashflowView();
+    }
+  };
+
+  tabAssetBtn.addEventListener('click', () => switchRightTab('asset'));
+  tabCashflowBtn.addEventListener('click', () => switchRightTab('cashflow'));
+  document.getElementById('btn-switch-cashflow-tab').addEventListener('click', () => {
+    switchRightTab('cashflow'); window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById('month-filter').addEventListener('change', (e) => {
+    if (!e.target.value) return; currentMonthStr = e.target.value;
+    ensureMonthDataExists(currentMonthStr); saveAndRender();
+  });
+
+  document.getElementById('btn-theme').addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    applyTheme(); window.lucide.createIcons(); renderTrendChart(); saveSilent();
+  });
+
+  document.getElementById('btn-privacy').addEventListener('click', () => {
+    state.privacy = !state.privacy;
+    document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}" class="w-5 h-5 text-brand-500"></i>`;
+    window.lucide.createIcons(); renderUI(); saveSilent(); renderDebtModalUI(); 
+    if(!document.getElementById('budget-modal').classList.contains('opacity-0')) renderBudgetModalUI();
+  });
+
+  document.getElementById('chart-data-type').addEventListener('change', (e) => {
+    state.chartType = e.target.value; renderTrendChart(); saveSilent();
+  });
+
+  document.getElementById('tx-type-income').addEventListener('click', () => switchTxType('income'));
+  document.getElementById('tx-type-expense').addEventListener('click', () => switchTxType('expense'));
+
+  document.getElementById('fab-add-tx').addEventListener('click', () => {
+    editingTxId = null; 
+    document.getElementById('tx-modal-title').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-brand-500"></i> Catat Transaksi`;
+    document.getElementById('btn-save-tx').textContent = "Simpan Transaksi";
+    
+    document.getElementById('tx-input-name').value = '';
+    document.getElementById('tx-input-amount').value = '';
+    switchTxType('expense'); 
+    
+    document.getElementById('tx-modal').classList.remove('opacity-0', 'pointer-events-none');
+    document.getElementById('tx-box').classList.remove('scale-95');
+    setTimeout(() => document.getElementById('tx-input-amount').focus(), 100);
+    window.lucide.createIcons();
+  });
+
+  document.getElementById('btn-close-tx').addEventListener('click', closeTxModal);
+  attachRealtimeFormat(document.getElementById('tx-input-amount'), () => {}, false);
+
+  document.getElementById('btn-save-tx').addEventListener('click', () => {
+    const name = document.getElementById('tx-input-name').value.trim();
+    const amountStr = document.getElementById('tx-input-amount').value.replace(/\D/g, '');
+    const amount = amountStr ? parseInt(amountStr, 10) : 0;
+    const category = document.getElementById('tx-input-category').value;
+    
+    const finalName = name || getCatDetails(activeTxType, category).name;
+
+    if(amount <= 0) { customAlert("Mohon isi nominal dengan benar."); return; }
+
+    if (editingTxId) {
+      const isTypeChanged = (editingTxType !== activeTxType);
+      if (isTypeChanged) {
+        const oldArrName = editingTxType === 'income' ? 'incomes' : 'expenses';
+        const oldArr = state.history[currentMonthStr][oldArrName];
+        const oldIdx = oldArr.findIndex(t => t.id === editingTxId);
+        if(oldIdx > -1) oldArr.splice(oldIdx, 1);
+
+        const newArrName = activeTxType === 'income' ? 'incomes' : 'expenses';
+        state.history[currentMonthStr][newArrName].push({
+          id: editingTxId, name: finalName, amount: amount, category: category
+        });
+      } else {
+        const arrName = activeTxType === 'income' ? 'incomes' : 'expenses';
+        const arr = state.history[currentMonthStr][arrName];
+        const idx = arr.findIndex(t => t.id === editingTxId);
+        if (idx > -1) {
+          arr[idx].name = finalName; arr[idx].amount = amount; arr[idx].category = category;
+        }
+      }
+    } else {
+      const newItem = { id: Date.now(), name: finalName, amount: amount, category: category };
+      if(activeTxType === 'income') state.history[currentMonthStr].incomes.push(newItem);
+      else state.history[currentMonthStr].expenses.push(newItem);
+    }
+
+    state.history[currentMonthStr].lastUpdated = Date.now();
+    saveSilent(); closeTxModal(); renderUI(); 
+    if(activeRightTab !== 'cashflow') switchRightTab('cashflow');
+  });
+
+  const budgetModal = document.getElementById('budget-modal'); 
+  const budgetBox = document.getElementById('budget-box');
+
+  document.getElementById('btn-open-budget-modal').addEventListener('click', () => { 
+    budgetModal.classList.remove('opacity-0', 'pointer-events-none'); 
+    budgetBox.classList.remove('scale-95'); 
+    
+    document.getElementById('budget-input-cat').value = '';
+    document.getElementById('budget-input-amount').value = '';
+    editingBudgetCatId = null;
+    document.getElementById('btn-save-budget').textContent = "Simpan";
+    
+    renderBudgetModalUI(); 
+  });
+  
+  document.getElementById('btn-close-budget').addEventListener('click', () => { 
+    budgetModal.classList.add('opacity-0', 'pointer-events-none'); 
+    budgetBox.classList.add('scale-95'); 
+  });
+
+  attachRealtimeFormat(document.getElementById('budget-input-amount'), () => {}, false);
+
+  document.getElementById('btn-save-budget').addEventListener('click', () => {
+    const catId = document.getElementById('budget-input-cat').value;
+    const amountStr = document.getElementById('budget-input-amount').value.replace(/\D/g, '');
+    const amount = amountStr ? parseInt(amountStr, 10) : 0;
+
+    if(!catId) { customAlert("Silakan pilih kategori pengeluaran terlebih dahulu."); return; }
+    if(amount <= 0) { customAlert("Nominal anggaran harus lebih dari Rp 0."); return; }
+
+    if(!state.history[currentMonthStr].budgets) state.history[currentMonthStr].budgets = {};
+
+    if (editingBudgetCatId && editingBudgetCatId !== catId) {
+      delete state.history[currentMonthStr].budgets[editingBudgetCatId];
+    }
+
+    state.history[currentMonthStr].budgets[catId] = amount;
+    state.history[currentMonthStr].lastUpdated = Date.now();
+
+    document.getElementById('budget-input-cat').value = '';
+    document.getElementById('budget-input-amount').value = '';
+    editingBudgetCatId = null;
+    document.getElementById('btn-save-budget').textContent = "Simpan";
+
+    saveSilent(); updateDynamicValues(); renderBudgetModalUI();
+  });
+
+  const debtModal = document.getElementById('debt-modal'); const debtBox = document.getElementById('debt-box');
+  document.getElementById('btn-open-debt-modal').addEventListener('click', () => { debtModal.classList.remove('opacity-0', 'pointer-events-none'); debtBox.classList.remove('scale-95'); renderDebtModalUI(); });
+  document.getElementById('btn-close-debt').addEventListener('click', () => { debtModal.classList.add('opacity-0', 'pointer-events-none'); debtBox.classList.add('scale-95'); });
+  
+  document.getElementById('btn-add-debt-item').addEventListener('click', () => { 
+    if (!state.history[currentMonthStr].debts) state.history[currentMonthStr].debts = [];
+    state.history[currentMonthStr].debts.push({ id: Date.now(), name: '', amount: 0 }); 
+    state.history[currentMonthStr].lastUpdated = Date.now(); 
+    saveSilent(); renderDebtModalUI(); updateDynamicValues(); 
+  });
 
   const attachRateSetting = (id, key) => {
     attachRealtimeFormat(document.getElementById(id), (v) => {
@@ -1501,6 +1505,37 @@
   });
   document.getElementById('btn-close-settings').addEventListener('click', () => { settingsModal.classList.add('opacity-0', 'pointer-events-none'); settingsBox.classList.add('scale-95'); });
 
+  document.getElementById('btn-add-custom-cat').addEventListener('click', () => {
+    const type = document.getElementById('custom-cat-type').value;
+    const name = document.getElementById('custom-cat-name').value.trim();
+    
+    if(!name) return;
+    if(!state.customCategories) state.customCategories = { income: [], expense: [] };
+    
+    if (editingCustomCat) {
+      if (editingCustomCat.type === type) {
+          state.customCategories[type][editingCustomCat.idx].name = name;
+      } else {
+          const oldCat = state.customCategories[editingCustomCat.type].splice(editingCustomCat.idx, 1)[0];
+          oldCat.name = name;
+          oldCat.icon = type === 'expense' ? 'tag' : 'tags';
+          state.customCategories[type].push(oldCat);
+      }
+      editingCustomCat = null;
+      document.getElementById('btn-add-custom-cat').innerHTML = '<i data-lucide="plus" class="w-4 h-4"></i>';
+    } else {
+      const icon = type === 'expense' ? 'tag' : 'tags'; 
+      state.customCategories[type].push({ id: `custom_${Date.now()}`, name, icon });
+    }
+    
+    document.getElementById('custom-cat-name').value = '';
+    saveSilent(); renderCustomCatList();
+    if(document.getElementById('budget-modal').classList.contains('opacity-0') === false) {
+       renderBudgetModalUI(); 
+    }
+    window.lucide.createIcons();
+  });
+
   document.getElementById('btn-login').addEventListener('click', async () => { try { await signInWithPopup(auth, provider); } catch (error) { customAlert(`Gagal masuk: ${error.message}`); } });
   document.getElementById('up-logout').addEventListener('click', () => { customConfirm('Yakin ingin keluar akun? Data lokal tetap aman di perangkat ini.', () => signOut(auth)); });
   
@@ -1509,10 +1544,13 @@
       currentUser = user;
       document.getElementById('user-logged-out').style.display = 'none'; document.getElementById('user-logged-in').style.display = 'flex';
       document.getElementById('up-avatar').src = user.photoURL || ''; document.getElementById('up-name').textContent = user.displayName || 'Pengguna'; document.getElementById('up-email').textContent = user.email || '';
+      
       syncListener = onSnapshot(doc(db, 'liquid_assets_users', currentUser.uid), (docSnap) => {
         if (docSnap.metadata.hasPendingWrites) return; 
         if (docSnap.exists() && docSnap.data().state) {
-          state = Object.assign(state, docSnap.data().state); ensureMonthDataExists(currentMonthStr);
+          state = Object.assign(state, docSnap.data().state); 
+          ensureMonthDataExists(currentMonthStr);
+          
           EXCHANGE_RATES['Emas Antam (g)'] = state.rates['Emas Antam (g)']; EXCHANGE_RATES['Emas G24 (g)'] = state.rates['Emas G24 (g)']; EXCHANGE_RATES['Dinar KR'] = state.rates['Dinar KR'];
           applyTheme();
           document.getElementById('btn-privacy').innerHTML = `<i data-lucide="${state.privacy ? 'eye-off' : 'eye'}" class="w-5 h-5 text-brand-500"></i>`;

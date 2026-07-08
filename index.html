@@ -1232,7 +1232,7 @@
     window.lucide.createIcons();
   };
 
-  /* ============================= HOME VIEW ============================= */
+  /* ============================= HOME VIEW / PILLARS ============================= */
   const healthCache = { debtRatio: 0, diversCount: 0, score: 0, savingsRate: 0, emergencyMonths: 0, expenseRatio: 0 };
 
   const computeHealthPillars = () => {
@@ -1240,20 +1240,16 @@
     const incomeTotal = (m.incomes || []).reduce((s, i) => s + i.amount, 0);
     const expenseTotal = (m.expenses || []).reduce((s, e) => s + e.amount, 0);
 
-    // Cari SEMUA goal yang berhubungan dengan dana darurat (kata kunci lebih luas)
-    const efKeywords = ['darurat', 'emergency', 'cadangan', 'jaga-jaga', 'jaga jaga'];
-    const efGoals = (m.goals || []).filter(g => {
-      const name = (g.name || '').toLowerCase();
-      return efKeywords.some(kw => name.includes(kw));
-    });
-
+    const liquidUnits = ['IDR / Tabungan', 'USD', 'SGD', 'EUR', 'AUD', 'JPY'];
     let emergencyFund = 0;
-    efGoals.forEach(g => {
-      (g.assets || []).forEach(a => { emergencyFund += a.amount * (EXCHANGE_RATES[a.unit] || 1); });
+    (m.goals || []).forEach(g => {
+      (g.assets || []).forEach(a => {
+        if (liquidUnits.includes(a.unit)) {
+          emergencyFund += a.amount * (EXCHANGE_RATES[a.unit] || 1);
+        }
+      });
     });
 
-    // Basis pengeluaran bulanan: pakai bulan ini kalau ada transaksi,
-    // kalau tidak, pakai rata-rata pengeluaran dari histori bulan-bulan lain
     let monthlyBasis = expenseTotal;
     if (monthlyBasis <= 0) {
       const pastMonths = Object.keys(state.history)
@@ -1266,11 +1262,12 @@
         monthlyBasis = pastExpenses.reduce((a, b) => a + b, 0) / pastExpenses.length;
       } else if (incomeTotal > 0) {
         monthlyBasis = incomeTotal * 0.6; // fallback terakhir: estimasi dari income
+      } else {
+        monthlyBasis = 3000000; // Asumsi dasar 3jt jika belum ada data sama sekali agar tidak nol
       }
     }
 
     const emergencyMonths = monthlyBasis > 0 ? (emergencyFund / monthlyBasis) : 0;
-
     const savingsRate = incomeTotal > 0 ? ((incomeTotal - expenseTotal) / incomeTotal) * 100 : (expenseTotal > 0 ? -100 : 0);
     const expenseRatio = incomeTotal > 0 ? (expenseTotal / incomeTotal) * 100 : (expenseTotal > 0 ? 100 : 0);
 
@@ -1279,13 +1276,6 @@
     healthCache.expenseRatio = expenseRatio;
 
     return { incomeTotal, expenseTotal, emergencyFund, emergencyMonths, savingsRate, expenseRatio };
-  };
-
-  const scoreFromRange = (val, goodMin, okMin) => {
-    // returns 0-100 score where val >= goodMin => 100, val>=okMin => 60, else scaled
-    if (val >= goodMin) return 100;
-    if (val >= okMin) return 60 + ((val - okMin) / (goodMin - okMin)) * 40;
-    return Math.max(0, (val / okMin) * 60);
   };
 
   const computeOverallScore = () => {
@@ -1394,17 +1384,17 @@
       {
         key: 'savings', icon: 'piggy-bank', color: 'emerald', weight: '25%',
         title: 'Tingkat Tabungan (Savings Rate)', value: `${healthCache.savingsRate.toFixed(1)}%`, score: scores.savingsScore,
-        desc: healthCache.savingsRate >= 20 ? 'Sangat baik, Anda menyisihkan lebih dari 20% pemasukan setiap bulan.' : (healthCache.savingsRate >= 10 ? 'Cukup baik, idealnya tingkatkan menyisihkan minimal 20% dari pemasukan.' : (healthCache.savingsRate >= 0 ? 'Masih rendah, coba kurangi pengeluaran tidak penting agar bisa menabung lebih banyak.' : 'Pengeluaran melebihi pemasukan bulan ini, perlu evaluasi arus kas segera.'))
+        desc: (healthCache.savingsRate === 0 && healthCache.expenseRatio === 0) ? 'Belum ada catatan arus kas bulan ini.' : (healthCache.savingsRate >= 20 ? 'Sangat baik, Anda menyisihkan lebih dari 20% pemasukan setiap bulan.' : (healthCache.savingsRate >= 10 ? 'Cukup baik, idealnya tingkatkan menyisihkan minimal 20% dari pemasukan.' : (healthCache.savingsRate >= 0 ? 'Masih rendah, coba kurangi pengeluaran tidak penting agar bisa menabung.' : 'Pengeluaran melebihi pemasukan bulan ini, perlu evaluasi arus kas segera.')))
       },
       {
         key: 'emergency', icon: 'shield-check', color: 'sky', weight: '20%',
-        title: 'Dana Darurat', value: `${healthCache.emergencyMonths.toFixed(1)}x pengeluaran bulanan`, score: scores.emergencyScore,
-        desc: healthCache.emergencyMonths >= 6 ? 'Dana darurat sudah mencapai target ideal (6x pengeluaran bulanan).' : (healthCache.emergencyMonths >= 3 ? 'Dana darurat cukup, tapi idealnya mencapai 6x pengeluaran bulanan.' : 'Dana darurat masih di bawah 3x pengeluaran bulanan, prioritaskan menabung untuk ini.')
+        title: 'Likuiditas (Dana Darurat)', value: `${healthCache.emergencyMonths.toFixed(1)}x pengeluaran`, score: scores.emergencyScore,
+        desc: healthCache.emergencyMonths >= 6 ? 'Dana likuid Anda sudah mencapai target ideal (min. 6x pengeluaran).' : (healthCache.emergencyMonths >= 3 ? 'Dana likuid cukup, tapi idealnya mencapai 6x pengeluaran.' : 'Dana likuid masih di bawah 3x pengeluaran bulanan, prioritaskan menabung tunai.')
       },
       {
         key: 'expense', icon: 'receipt', color: 'orange', weight: '15%',
-        title: 'Rasio Pengeluaran terhadap Pemasukan', value: `${healthCache.expenseRatio.toFixed(1)}%`, score: scores.expenseScore,
-        desc: healthCache.expenseRatio <= 50 ? 'Pengeluaran terkendali, di bawah 50% dari pemasukan.' : (healthCache.expenseRatio <= 80 ? 'Pengeluaran cukup besar, usahakan tetap di bawah 80% dari pemasukan.' : 'Pengeluaran mendekati atau melebihi pemasukan, perlu efisiensi anggaran.')
+        title: 'Rasio Pengeluaran', value: `${healthCache.expenseRatio.toFixed(1)}%`, score: scores.expenseScore,
+        desc: (healthCache.savingsRate === 0 && healthCache.expenseRatio === 0) ? 'Belum ada catatan arus kas bulan ini.' : (healthCache.expenseRatio <= 50 ? 'Pengeluaran terkendali, di bawah 50% dari pemasukan.' : (healthCache.expenseRatio <= 80 ? 'Pengeluaran cukup besar, usahakan tetap di bawah 80% dari pemasukan.' : 'Pengeluaran mendekati atau melebihi pemasukan, perlu efisiensi anggaran.'))
       },
       {
         key: 'diversification', icon: 'layers', color: 'violet', weight: '15%',

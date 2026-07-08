@@ -1240,11 +1240,35 @@
     const incomeTotal = (m.incomes || []).reduce((s, i) => s + i.amount, 0);
     const expenseTotal = (m.expenses || []).reduce((s, e) => s + e.amount, 0);
 
-    // Emergency fund: look for goal literally about "darurat" else use first goal, compare vs 6x monthly expense (fallback: 3jt baseline)
+    // Cari SEMUA goal yang berhubungan dengan dana darurat (kata kunci lebih luas)
+    const efKeywords = ['darurat', 'emergency', 'cadangan', 'jaga-jaga', 'jaga jaga'];
+    const efGoals = (m.goals || []).filter(g => {
+      const name = (g.name || '').toLowerCase();
+      return efKeywords.some(kw => name.includes(kw));
+    });
+
     let emergencyFund = 0;
-    const efGoal = (m.goals || []).find(g => (g.name || '').toLowerCase().includes('darurat'));
-    if (efGoal) { (efGoal.assets || []).forEach(a => emergencyFund += a.amount * (EXCHANGE_RATES[a.unit] || 1)); }
-    const monthlyBasis = expenseTotal > 0 ? expenseTotal : (incomeTotal * 0.6);
+    efGoals.forEach(g => {
+      (g.assets || []).forEach(a => { emergencyFund += a.amount * (EXCHANGE_RATES[a.unit] || 1); });
+    });
+
+    // Basis pengeluaran bulanan: pakai bulan ini kalau ada transaksi,
+    // kalau tidak, pakai rata-rata pengeluaran dari histori bulan-bulan lain
+    let monthlyBasis = expenseTotal;
+    if (monthlyBasis <= 0) {
+      const pastMonths = Object.keys(state.history)
+        .filter(mk => mk.match(/^\d{4}-\d{2}$/) && mk !== currentMonthStr)
+        .sort().reverse().slice(0, 6); // maksimal 6 bulan terakhir
+      const pastExpenses = pastMonths
+        .map(mk => (state.history[mk].expenses || []).reduce((s, e) => s + e.amount, 0))
+        .filter(v => v > 0);
+      if (pastExpenses.length > 0) {
+        monthlyBasis = pastExpenses.reduce((a, b) => a + b, 0) / pastExpenses.length;
+      } else if (incomeTotal > 0) {
+        monthlyBasis = incomeTotal * 0.6; // fallback terakhir: estimasi dari income
+      }
+    }
+
     const emergencyMonths = monthlyBasis > 0 ? (emergencyFund / monthlyBasis) : 0;
 
     const savingsRate = incomeTotal > 0 ? ((incomeTotal - expenseTotal) / incomeTotal) * 100 : (expenseTotal > 0 ? -100 : 0);

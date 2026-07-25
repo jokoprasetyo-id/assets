@@ -205,19 +205,19 @@
       <div class="absolute -right-10 -top-10 w-40 h-40 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
       
       <div class="flex justify-between items-center mb-2 relative z-10">
-        <div class="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total Portofolio Aset</div>
+        <div class="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Kekayaan Bersih (Net Worth)</div>
         <button id="btn-privacy" class="p-1.5 rounded-full hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 smooth-transition"><i data-lucide="eye" class="w-4 h-4 text-zinc-400"></i></button>
       </div>
-      <div class="font-display font-extrabold text-4xl tracking-tight text-zinc-900 dark:text-white break-words relative z-10" id="home-total-assets">Rp 0</div>
+      <div class="font-display font-extrabold text-4xl tracking-tight text-zinc-900 dark:text-white break-words relative z-10" id="home-net-worth">Rp 0</div>
       
       <div class="flex gap-3 mt-6 pt-5 border-t border-zinc-200/50 dark:border-zinc-700/50 relative z-10">
         <div class="flex-1 bg-white/40 dark:bg-zinc-800/40 p-3 rounded-2xl border border-white/30 dark:border-zinc-700/30">
-          <div class="text-[10px] font-semibold text-zinc-500 mb-1 flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Pencapaian Target</div>
-          <div class="font-bold text-sm text-brand-600 dark:text-brand-400" id="home-target-pct">0%</div>
+          <div class="text-[10px] font-semibold text-zinc-500 mb-1 flex items-center gap-1"><i data-lucide="layers" class="w-3 h-3"></i> Total Aset</div>
+          <div class="font-bold text-sm text-brand-600 dark:text-brand-400" id="home-total-assets">Rp 0</div>
         </div>
         <div class="flex-1 bg-white/40 dark:bg-zinc-800/40 p-3 rounded-2xl border border-white/30 dark:border-zinc-700/30">
-          <div class="text-[10px] font-semibold text-zinc-500 mb-1 flex items-center gap-1"><i data-lucide="briefcase" class="w-3 h-3"></i> Jenis Aset</div>
-          <div class="font-bold text-sm text-zinc-700 dark:text-zinc-300" id="home-asset-count">0 Kategori</div>
+          <div class="text-[10px] font-semibold text-zinc-500 mb-1 flex items-center gap-1"><i data-lucide="hand-coins" class="w-3 h-3"></i> Total Hutang</div>
+          <div class="font-bold text-sm text-red-500 dark:text-red-400" id="home-total-debt">Rp 0</div>
         </div>
       </div>
     </div>
@@ -283,6 +283,17 @@
     <button id="btn-add-goal" class="w-full glass-chip border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 font-semibold py-4 rounded-[2rem] flex items-center justify-center gap-2 hover:bg-white/50 dark:hover:bg-zinc-800/50 smooth-transition">
       <i data-lucide="folder-plus" class="w-5 h-5"></i> Buat Folder / Tujuan Baru
     </button>
+
+    <!-- Bagian Hutang -->
+    <div class="bg-card rounded-[2rem] p-6 mt-2 border-t-4 border-t-red-400 dark:border-t-red-600">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-xs font-bold uppercase tracking-widest text-red-500 flex items-center gap-2"><i data-lucide="hand-coins" class="w-4 h-4"></i> Kewajiban / Hutang</div>
+      </div>
+      <div id="debts-container" class="flex flex-col gap-3 mb-4"></div>
+      <button id="btn-add-debt" class="w-full glass-chip border border-dashed border-red-300 dark:border-red-700/50 text-red-500 font-semibold py-4 rounded-[2rem] flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-500/10 smooth-transition">
+        <i data-lucide="plus" class="w-5 h-5"></i> Tambah Catatan Hutang
+      </button>
+    </div>
   </div>
 
 </div>
@@ -483,16 +494,19 @@
     if (!state.history[monthStr]) {
       const pastMonths = Object.keys(state.history).filter(m => m.match(/^\d{4}-\d{2}$/) && m < monthStr).sort().reverse();
       let clonedGoals = [];
+      let clonedDebts = [];
       if (pastMonths.length > 0) {
         const prev = state.history[pastMonths[0]];
         clonedGoals = JSON.parse(JSON.stringify(prev.goals || []));
+        clonedDebts = JSON.parse(JSON.stringify(prev.debts || []));
       } else {
         clonedGoals = [{ id: 1, name: 'Dana Darurat / Kas', target: 50000000, collapsed: false, assets: [{ id: 101, name: 'Rekening Utama', unit: 'IDR / Tabungan', amount: 0 }] }];
       }
-      state.history[monthStr] = { lastUpdated: Date.now(), totalAssets: 0, goals: clonedGoals };
+      state.history[monthStr] = { lastUpdated: Date.now(), totalAssets: 0, netWorth: 0, goals: clonedGoals, debts: clonedDebts };
     }
     state.history[monthStr].goals = ensureArray(state.history[monthStr].goals);
     state.history[monthStr].goals.forEach(g => { g.assets = ensureArray(g.assets); });
+    state.history[monthStr].debts = ensureArray(state.history[monthStr].debts);
     state.reminders = ensureArray(state.reminders);
   };
 
@@ -638,12 +652,29 @@
       if(statColl) statColl.textContent = renderMoney(goalTotalIDR);
     });
 
+    // Debt & Net Worth Calculation
+    let totalDebt = 0;
+    const currentDebts = state.history[currentMonthStr].debts || [];
+    currentDebts.forEach(d => totalDebt += (d.amount || 0));
+
+    let netWorth = globalGrossAssets - totalDebt;
+
     state.history[currentMonthStr].totalAssets = globalGrossAssets;
+    state.history[currentMonthStr].netWorth = netWorth;
 
     // Update Home Header
-    const nwEl = document.getElementById('home-total-assets');
-    if (nwEl) nwEl.textContent = renderMoney(globalGrossAssets);
+    const nwEl = document.getElementById('home-net-worth');
+    if (nwEl) {
+      nwEl.textContent = renderMoney(netWorth);
+      nwEl.className = netWorth < 0 ? "font-display font-extrabold text-4xl tracking-tight text-red-500 break-words relative z-10" : "font-display font-extrabold text-4xl tracking-tight text-zinc-900 dark:text-white break-words relative z-10";
+    }
     
+    const assetEl = document.getElementById('home-total-assets');
+    if (assetEl) assetEl.textContent = renderMoney(globalGrossAssets);
+
+    const debtEl = document.getElementById('home-total-debt');
+    if (debtEl) debtEl.textContent = renderMoney(totalDebt);
+
     // Overall Target Progress
     let overallPct = totalTargetAll > 0 ? (globalGrossAssets / totalTargetAll) * 100 : 0;
     const homeTargetPct = document.getElementById('home-target-pct');
@@ -843,6 +874,40 @@
     });
     document.querySelectorAll('.btn-del-asset').forEach(el => { el.addEventListener('click', (e) => { const gIdx = e.currentTarget.dataset.gidx; const aIdx = e.currentTarget.dataset.aidx; state.history[currentMonthStr].goals[gIdx].assets.splice(aIdx, 1); saveAndRender(); }); });
 
+    // RENDER DEBTS
+    const debtsContainer = document.getElementById('debts-container');
+    if (debtsContainer) {
+      debtsContainer.innerHTML = '';
+      const currentDebts = state.history[currentMonthStr].debts || [];
+      if (currentDebts.length === 0) {
+        debtsContainer.innerHTML = '<div class="text-center py-4 text-xs font-medium text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl">Bebas hutang! Belum ada catatan yang ditambahkan.</div>';
+      } else {
+        currentDebts.forEach((debt, dIdx) => {
+          let valStr = state.privacy ? (debt.amount ? '12345678' : '') : (debt.amount ? debt.amount.toLocaleString('id-ID') : '');
+          let typeAttr = state.privacy ? 'password' : 'text';
+          
+          debtsContainer.innerHTML += `
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 glass-chip rounded-2xl relative group focus-within:ring-1 focus-within:ring-red-400 transition border border-red-100 dark:border-red-500/20">
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0 shadow-sm"><i data-lucide="hand-coins" class="w-4 h-4 text-red-500"></i></div>
+              <input type="text" class="debt-name w-full bg-transparent border-none text-sm font-semibold text-zinc-800 dark:text-zinc-200 outline-none p-0 focus:ring-0 placeholder-zinc-400" value="${debt.name}" placeholder="Nama Hutang (Mis: KPR, Kartu Kredit)..." data-didx="${dIdx}">
+            </div>
+            <div class="flex items-center gap-2 shrink-0 sm:justify-end">
+              <div class="flex bg-white/50 dark:bg-zinc-900/50 rounded-xl overflow-hidden transition px-3 py-2 items-center gap-2 border border-red-100/50 dark:border-red-900/30">
+                <span class="text-xs font-bold text-red-500">Rp</span>
+                <input type="${typeAttr}" inputmode="numeric" class="debt-amount w-24 bg-transparent text-right text-sm font-display font-bold outline-none p-0 text-red-600 dark:text-red-400" value="${valStr}" placeholder="0" data-didx="${dIdx}">
+              </div>
+              <button class="btn-del-debt p-2.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl smooth-transition opacity-0 group-hover:opacity-100 focus:opacity-100" data-didx="${dIdx}"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>`;
+        });
+      }
+
+      document.querySelectorAll('.debt-name').forEach(el => { el.addEventListener('blur', e => { state.history[currentMonthStr].debts[el.dataset.didx].name = e.target.value; saveAndRender(); }); });
+      document.querySelectorAll('.debt-amount').forEach(el => { attachRealtimeFormat(el, (v) => { state.history[currentMonthStr].debts[el.dataset.didx].amount = v; }, false); });
+      document.querySelectorAll('.btn-del-debt').forEach(el => { el.addEventListener('click', (e) => { const dIdx = e.currentTarget.dataset.didx; state.history[currentMonthStr].debts.splice(dIdx, 1); saveAndRender(); }); });
+    }
+
     window.lucide.createIcons();
     updateDynamicValues();
   };
@@ -854,8 +919,8 @@
     const months = Object.keys(state.history).sort();
     const labels = months.map(formatMonthLabel);
     
-    // Line chart only for Total Assets
-    const dataPoints = months.map(m => state.history[m].totalAssets || 0);
+    // Line chart now shows Net Worth
+    const dataPoints = months.map(m => state.history[m].netWorth || state.history[m].totalAssets || 0);
     const lineColor = '#0ea5e9'; 
     const bgColor = 'rgba(14, 165, 233, 0.1)';
 
@@ -985,6 +1050,13 @@
   });
 
   /* ============================= EVENT LISTENERS & INIT ============================= */
+  document.getElementById('btn-add-debt')?.addEventListener('click', () => {
+    if (!state.history[currentMonthStr].debts) state.history[currentMonthStr].debts = [];
+    state.history[currentMonthStr].debts.push({ id: Date.now(), name: '', amount: 0 });
+    saveAndRender();
+    setTimeout(() => { document.getElementById('debts-container').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+  });
+
   document.getElementById('btn-add-goal').addEventListener('click', () => {
     if (!state.history[currentMonthStr].goals) state.history[currentMonthStr].goals = [];
     state.history[currentMonthStr].goals.push({ id: Date.now(), name: '', target: 0, collapsed: false, assets: [] });
